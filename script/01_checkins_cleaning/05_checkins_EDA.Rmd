@@ -1,0 +1,439 @@
+---
+title: ""
+author: "Kaixin"
+date: "2023-03-05"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "~/weibo/17_checkins_cleaning/03_full_sample/")
+```
+
+```{r initial, include=FALSE}
+library(tidyverse)
+library(data.table)
+library(lubridate)
+library(zoo)
+library(patchwork)
+
+ifile_checkins <-
+  "data/04_checkins_domestic.csv.gz"
+odir_data <-
+  "data/"
+odir_result <-
+  "result/"
+```
+
+rawdata
+```{r rawdata, include=FALSE}
+checkins <- fread(ifile_checkins)
+```
+
+
+```{r plot_rawdata}
+postcount_all <-
+  checkins[, .(postcount_all = .N), by = .(created_at)]
+
+poicount_all <-
+  checkins[, .(poicount_all = uniqueN(containerid)), by = .(created_at)]
+
+usercount_all <-
+  checkins[, .(usercount_all = uniqueN(userid)), by = .(created_at)]
+
+
+p1 <-
+  ggplot(postcount_all) +
+  geom_line(aes(x = created_at, 
+                y = postcount_all),
+            linewidth = 0.2) +
+  labs(title = "postcount_all_rawdata")
+
+p2 <-
+  ggplot(poicount_all) +
+  geom_line(aes(x = created_at, 
+                y = poicount_all),
+            linewidth = 0.2) +
+  labs(title = "poicount_all_rawdata")
+
+p3 <-
+  ggplot(usercount_all) +
+  geom_line(aes(x = created_at, 
+                y = usercount_all),
+            linewidth = 0.2) +
+  labs(title = "usercount_all_rawdata")
+
+
+
+plot_result <-
+  p1 / p2 / p3
+
+time <-
+  paste0(str_replace(now(), " ", "_"))
+
+ggsave(plot_result,
+       filename = paste0("Rplot_postcount_all_", time, ".pdf"),
+       path = odir_result,
+       width = 6,
+       height = 8)
+```
+
+
+categoryname_data
+```{r category_name_data}
+checkins_categoryname <-
+  checkins[category_name != ""]
+```
+
+
+```{r plot_categoryname_data}
+postcount_all <-
+  checkins_categoryname[, .(postcount_all = .N), by = .(created_at)]
+
+poicount_all <-
+  checkins_categoryname[, .(poicount_all = uniqueN(containerid)), by = .(created_at)]
+
+usercount_all <-
+  checkins_categoryname[, .(usercount_all = uniqueN(userid)), by = .(created_at)]
+
+
+p1 <-
+  ggplot(postcount_all) +
+  geom_line(aes(x = created_at, 
+                y = postcount_all),
+            linewidth = 0.2) +
+  labs(title = "postcount_all_rawdata")
+
+p2 <-
+  ggplot(poicount_all) +
+  geom_line(aes(x = created_at, 
+                y = poicount_all),
+            linewidth = 0.2) +
+  labs(title = "poicount_all_rawdata")
+
+p3 <-
+  ggplot(usercount_all) +
+  geom_line(aes(x = created_at, 
+                y = usercount_all),
+            linewidth = 0.2) +
+  labs(title = "usercount_all_rawdata")
+
+
+
+plot_result <-
+  p1 / p2 / p3
+
+time <-
+  paste0(str_replace(now(), " ", "_"))
+
+ggsave(plot_result,
+       filename = paste0("Rplot_postcount_all_", time, ".pdf"),
+       path = odir_result,
+       width = 6,
+       height = 8)
+```
+
+
+categorygoogle_data
+```{r categorygoogle_data}
+checkins_categorygoogle <-
+  checkins[category_google != ""] %>%
+  .[(category_google != "Education") & (category_google != "Others")]
+```
+
+
+```{r plot_categorygoogle_data}
+postcount_all <-
+  checkins_categorygoogle[, .(postcount_all = .N), by = .(created_at)]
+
+poicount_all <-
+  checkins_categorygoogle[, .(poicount_all = uniqueN(containerid)), by = .(created_at)]
+
+usercount_all <-
+  checkins_categorygoogle[, .(usercount_all = uniqueN(userid)), by = .(created_at)]
+
+
+p1 <-
+  ggplot(postcount_all) +
+  geom_line(aes(x = created_at, 
+                y = postcount_all),
+            linewidth = 0.2) +
+  labs(title = "postcount_all_rawdata")
+
+p2 <-
+  ggplot(poicount_all) +
+  geom_line(aes(x = created_at, 
+                y = poicount_all),
+            linewidth = 0.2) +
+  labs(title = "poicount_all_rawdata")
+
+p3 <-
+  ggplot(usercount_all) +
+  geom_line(aes(x = created_at, 
+                y = usercount_all),
+            linewidth = 0.2) +
+  labs(title = "usercount_all_rawdata")
+
+
+
+plot_result <-
+  p1 / p2 / p3
+
+time <-
+  paste0(str_replace(now(), " ", "_"))
+
+ggsave(plot_result,
+       filename = paste0("Rplot_postcount_all_", time, ".pdf"),
+       path = odir_result,
+       width = 6,
+       height = 8)
+```
+
+
+```{r plot_categorygoogle_data_each_category}
+
+category_list <- 
+  c("Parks",
+    "Retail & recreation",
+    "Grocery & pharmacy",
+    "Workplaces",
+    "Transit stations",
+    "Residential")
+
+p1 <- NULL
+
+for(i in 1:length(category_list)){
+  
+  postcount_category <-
+    checkins_categorygoogle[category_google == category_list[i]] %>%
+    .[, .(postcount_category = .N), by = .(created_at)]
+  
+  # postcount_category_7MA <-
+  #   postcount_category[order(created_at)] %>%
+  #   .[, postcount_category_7MA := rollmean(postcount_category, k = 7, fill = NA)]
+  
+  plot <-
+    ggplot(postcount_category) +
+    geom_line(aes(x = created_at, 
+                  y = postcount_category),
+              linewidth = 0.1) +
+    labs(title = paste0(category_list[i], "_rawdata")) 
+  
+  if(i == 1){
+    p1 <- plot
+  } else{
+    p1 <- p1 / plot
+  }
+  
+}
+
+p2 <- NULL
+
+for(i in 1:length(category_list)){
+  
+  poicount_category <-
+    checkins_categorygoogle[category_google == category_list[i]] %>%
+    .[, .(poicount_category = uniqueN(containerid)), by = .(created_at)]
+  
+  # poicount_category_7MA <-
+  #   poicount_category[order(created_at)] %>%
+  #   .[, poicount_category_7MA := rollmean(poicount_category, k = 7, fill = NA)]
+  
+  plot <-
+    ggplot(poicount_category) +
+    geom_line(aes(x = created_at, 
+                  y = poicount_category),
+              linewidth = 0.1) +
+    labs(title = paste0(category_list[i], "_rawdata")) 
+  
+  if(i == 1){
+    p2 <- plot
+  } else{
+    p2 <- p2 / plot
+  }
+  
+}
+
+
+plot_result <- p1 | p2
+
+time <-
+  paste0(str_replace(now(), " ", "_"))
+
+ggsave(plot_result,
+       filename = paste0("Rplot_postcount_category_", time, ".png"),
+       path = odir_result,
+       width = 12,
+       height = 15)
+```
+
+
+```{r plot_categorygoogle_data_each_category_2019to2020}
+
+
+category_list <- 
+  c("Parks",
+    "Retail & recreation",
+    "Grocery & pharmacy",
+    "Workplaces",
+    "Transit stations",
+    "Residential")
+
+p1 <- NULL
+
+for(i in 1:length(category_list)){
+  
+  postcount_category <-
+    checkins_categorygoogle[category_google == category_list[i]] %>%
+    .[, .(postcount_category = .N), by = .(created_at)]
+  
+  # postcount_category_7MA <-
+  #   postcount_category[order(created_at)] %>%
+  #   .[, postcount_category_7MA := rollmean(postcount_category, k = 7, fill = NA)]
+  
+  plot <-
+    ggplot(postcount_category) +
+    geom_line(aes(x = created_at, 
+                  y = postcount_category),
+              linewidth = 0.2) +
+    scale_x_date(limits = c(ymd("2018-10-01"), NA)) +
+    labs(title = paste0(category_list[i], "_rawdata")) 
+  
+  if(i == 1){
+    p1 <- plot
+  } else{
+    p1 <- p1 / plot
+  }
+  
+}
+
+p2 <- NULL
+
+for(i in 1:length(category_list)){
+  
+  poicount_category <-
+    checkins_categorygoogle[category_google == category_list[i]] %>%
+    .[, .(poicount_category = uniqueN(containerid)), by = .(created_at)]
+  
+  # poicount_category_7MA <-
+  #   poicount_category[order(created_at)] %>%
+  #   .[, poicount_category_7MA := rollmean(poicount_category, k = 7, fill = NA)]
+  
+  plot <-
+    ggplot(poicount_category) +
+    geom_line(aes(x = created_at, 
+                  y = poicount_category),
+              linewidth = 0.2) +
+    scale_x_date(limits = c(ymd("2018-10-01"), NA)) +
+    labs(title = paste0(category_list[i], "_rawdata")) 
+  
+  if(i == 1){
+    p2 <- plot
+  } else{
+    p2 <- p2 / plot
+  }
+  
+}
+
+
+plot_result <- p1 | p2
+
+time <-
+  paste0(str_replace(now(), " ", "_"))
+
+ggsave(plot_result,
+       filename = paste0("Rplot_postcount_category_", time, ".png"),
+       path = odir_result,
+       width = 12,
+       height = 15)
+```
+
+
+```{r plot_categorygoogle_data_each_category_2019to2020_7MA}
+
+
+category_list <- 
+  c("Parks",
+    "Retail & recreation",
+    "Grocery & pharmacy",
+    "Workplaces",
+    "Transit stations",
+    "Residential")
+
+p1 <- NULL
+
+for(i in 1:length(category_list)){
+  
+  postcount_category <-
+    checkins_categorygoogle[category_google == category_list[i]] %>%
+    .[, .(postcount_category = .N), by = .(created_at)]
+  
+  postcount_category_7MA <-
+    postcount_category[order(created_at)] %>%
+    .[, postcount_category_7MA := rollmean(postcount_category, k = 7, fill = NA)]
+  
+  plot <-
+    ggplot(postcount_category_7MA) +
+    geom_line(aes(x = created_at, 
+                  y = postcount_category_7MA),
+              linewidth = 0.5) +
+    scale_x_date(limits = c(ymd("2018-10-01"), NA)) +
+    labs(title = paste0(category_list[i], "_7MA")) 
+  
+  if(i == 1){
+    p1 <- plot
+  } else{
+    p1 <- p1 / plot
+  }
+  
+}
+
+p2 <- NULL
+
+for(i in 1:length(category_list)){
+  
+  poicount_category <-
+    checkins_categorygoogle[category_google == category_list[i]] %>%
+    .[, .(poicount_category = uniqueN(containerid)), by = .(created_at)]
+  
+  poicount_category_7MA <-
+    poicount_category[order(created_at)] %>%
+    .[, poicount_category_7MA := rollmean(poicount_category, k = 7, fill = NA)]
+  
+  plot <-
+    ggplot(poicount_category_7MA) +
+    geom_line(aes(x = created_at, 
+                  y = poicount_category_7MA),
+              linewidth = 0.5) +
+    scale_x_date(limits = c(ymd("2018-10-01"), NA)) +
+    labs(title = paste0(category_list[i], "_7MA")) 
+  
+  if(i == 1){
+    p2 <- plot
+  } else{
+    p2 <- p2 / plot
+  }
+  
+}
+
+
+plot_result <- p1 | p2
+
+time <-
+  paste0(str_replace(now(), " ", "_"))
+
+ggsave(plot_result,
+       filename = paste0("Rplot_postcount_category_", time, ".png"),
+       path = odir_result,
+       width = 12,
+       height = 15)
+```
+
+
+
+
+
+
+
+
+
