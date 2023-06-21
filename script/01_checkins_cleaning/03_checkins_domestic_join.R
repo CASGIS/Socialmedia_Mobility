@@ -1,6 +1,5 @@
 
-## 去除国外的定位签到
-## 去除港澳台定位的签到
+## 去除国外的定位签到, 去除港澳台定位的签到
 ## 连接category_name和category_google
 
 
@@ -47,7 +46,7 @@ pois_classify <-
 
 # --------------------- main process ---------------------
 checkins_filter <-
-  checkins[city_adm$city_name, on = "city", nomatch = 0] %>%
+  checkins[city_adm$city_join, on = "city", nomatch = 0] %>%
   .[(city!= "香港") & (city != "澳门") & (city != "台湾")]
 
 pois_category <-
@@ -64,10 +63,9 @@ checkins_result <-
         by.y = "poiid")
 
 
-
 # --------------------- save result ---------------------
 fwrite(checkins_result,
-       paste0(odir, "04_checkins_domestic.csv.gz"))
+       paste0(odir, "03_checkins.csv.gz"))
 
 
 
