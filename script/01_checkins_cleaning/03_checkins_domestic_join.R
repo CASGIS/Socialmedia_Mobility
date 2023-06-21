@@ -64,6 +64,7 @@ checkins_result <-
         by.y = "poiid")
 
 
+
 # --------------------- save result ---------------------
 fwrite(checkins_result,
        paste0(odir, "04_checkins_domestic.csv.gz"))
