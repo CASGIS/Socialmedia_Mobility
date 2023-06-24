@@ -7,7 +7,7 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = "~/weibo/17_checkins_cleaning/03_full_sample/")
+knitr::opts_knit$set(root.dir = "~/Socialmedia_Mobility/")
 ```
 
 
@@ -19,9 +19,9 @@ library(zoo)
 library(patchwork)
 
 ifile_checkins <-
-  "data/04_checkins_domestic.csv.gz"
+  "data/processed/01_checkins_cleaning/03_checkins_domestic.csv.gz"
 odir_data <-
-  "data/"
+  "data/processed/"
 odir_result <-
   "result/"
 ```
@@ -45,7 +45,7 @@ checkins_categorygoogle <-
 # 使用checkins,不使用checkins_category
 
 period_0 <-
-  c(ymd("2018-10-01"):ymd("2020-02-01"))  # "2020-02-01"
+  c(ymd("2018-10-01"):ymd("2020-02-01"))
 
 period_1 <-
   c(ymd("2020-03-01"):ymd("2020-12-31"))
@@ -86,7 +86,6 @@ user_freq_filter_before <-
   .[, .(month_posted = .N), by = .(userid)] %>%
   .[, .(userid = unique(userid))]
 
-
 user_freq_filter <-
   user_freq %>%
   .[ymonth >= ymd("2020-04-01")] %>%
@@ -108,7 +107,6 @@ checkins_supple_residential <-
   .[poi_filter_user, on = "userid", nomatch = 0] %>%
   .[sample(.N, .N*5/12)]
 
-
 checkins_remove_retail <-
   checkins_categorygoogle[created_at %in% period_1] %>%
   .[category_google == "Retail & recreation"] %>%
@@ -116,7 +114,7 @@ checkins_remove_retail <-
 ```
 
 
-```{r plot}
+```{r plot, eval=FALSE, echo=FALSE}
 user_filter_final <-
   setdiff(poi_filter_user, user_freq_filter_result)
 
@@ -213,7 +211,7 @@ checkins_filter <-
   .[!checkins_remove_retail, on = "bid"]
 
 fwrite(checkins_filter,
-       paste0(odir_data, paste0("06_checkins_filter.csv.gz")))
+       paste0(odir_data, paste0("01_checkins.csv.gz")))
 ```
 
 

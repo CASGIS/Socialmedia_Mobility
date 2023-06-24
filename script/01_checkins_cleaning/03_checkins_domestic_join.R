@@ -65,7 +65,7 @@ checkins_result <-
 
 # --------------------- save result ---------------------
 fwrite(checkins_result,
-       paste0(odir, "03_checkins.csv.gz"))
+       paste0(odir, "03_checkins_domestic.csv.gz"))
 
 
 

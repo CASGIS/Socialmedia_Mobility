@@ -6,9 +6,10 @@ output: html_document
 ---
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-knitr::opts_knit$set(root.dir = "~/weibo/17_checkins_cleaning/03_full_sample/")
+# knitr::opts_chunk$set(echo = TRUE)
+# knitr::opts_knit$set(root.dir = "~/weibo/17_checkins_cleaning/03_full_sample/")
 ```
+
 
 ```{r initial, include=FALSE}
 library(tidyverse)
@@ -18,7 +19,7 @@ library(zoo)
 library(patchwork)
 
 ifile_checkins <-
-  "data/04_checkins_domestic.csv.gz"
+  "data/processed/01_checkins_cleaning/03_checkins.csv.gz"
 odir_data <-
   "data/"
 odir_result <-
