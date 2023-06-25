@@ -1,0 +1,211 @@
+---
+title: "04_location_checkins_frequency"
+author: "Kaixin"
+date: "2023-03-18"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "~/SMobility_paper_v2/03_checkins_distribution/")
+```
+
+
+```{r initial, include=FALSE}
+library(tidyverse)
+library(data.table)
+library(lubridate)
+library(lemon)
+library(RColorBrewer)
+library(patchwork)
+
+
+ifile_checkins_lonlat <-
+  "result/01_checkins_link_lonlat.csv"
+ifile_checkins <-
+  "~/weibo/17_checkins_cleaning/03_full_sample/data/06_checkins_filter.csv.gz"
+
+odir_result <- 
+  "result/"
+```
+
+
+```{r color_setting}
+# display.brewer.pal(n = 6, name = "Set1")
+pal <- 
+  brewer.pal(n = 6, name = "Set1") %>% rev()
+pal
+```
+
+
+```{r input_data}
+checkins_lonlat <-
+  fread(ifile_checkins_lonlat)
+
+checkins <-
+  fread(ifile_checkins,
+        select = c(userid = "character",
+                   created_at = "Date",
+                   category_google = "character"))
+```
+
+```{r}
+checkins_lonlat_log <-
+  checkins_lonlat %>%
+  .[!(category_google %in% exclude_category)] %>%
+  .[, checkins_num_log := log10(checkins_num)]
+
+summary(checkins_lonlat_log)
+```
+
+
+```{r post_num_user}
+post_num_user <-
+  checkins[!(category_google %in% exclude_category)] %>%
+  .[year(created_at) == 2019 | year(created_at) == 2020] %>%
+  .[, .(post_num = .N), by = .(userid, category_google)] %>%
+  .[order(post_num)]
+
+summary(post_num_user)
+```
+
+
+```{r plot1}
+plotdata1 <-
+  checkins_lonlat_log[, category_google := factor(category_google, 
+                                                  levels = c(
+                                                    "Residential",
+                                                    "Workplaces",
+                                                    "Retail & recreation",
+                                                    "Parks",
+                                                    "Transit stations",
+                                                    "Grocery & pharmacy"
+                                                  ))]
+
+plot1 <-
+  ggplot() +
+  geom_histogram(data = plotdata1,
+                 mapping = aes(x = checkins_num_log,
+                               fill = category_google), 
+                 binwidth = 0.05  # 0.02
+                 ) +
+  geom_text(data = plotdata1[, .(category_google = unique(category_google))],
+            mapping = aes(label = category_google,
+                          x = 4,
+                          y = 10^4.5),
+            hjust = 1,
+            size = unit(2.5, "pt")) +
+  facet_rep_wrap(~category_google,
+                 repeat.tick.labels = T,
+                 nrow = 2,
+                 # scales = "free_y",
+                 scales = "fixed"
+                 # strip.position = "top"
+                 ) +
+  scale_x_continuous(breaks = seq(0, 4, 1),
+                     labels = c(expression(10^0),
+                                expression(10^1),
+                                expression(10^2),
+                                expression(10^3),
+                                expression(10^4))) +
+  scale_y_log10(breaks = 10^seq(0, 5, 1),
+                labels = c(expression(10 ^ 0),
+                           expression(10 ^ 1),
+                           expression(10 ^ 2),
+                           expression(10 ^ 3),
+                           expression(10 ^ 4),
+                           expression(10 ^ 5))) +
+  scale_fill_manual(values = pal) +
+  coord_cartesian(xlim = c(0, 4)) +
+  labs(x = "Number of posts",
+       y = "Number of POIs") +
+  theme_bw() +
+  theme(
+    axis.title = element_text(size = unit(8, "pt")),
+    axis.text = element_text(size = unit(7, "pt")),
+    panel.grid = element_blank(),
+    legend.position = "none",
+    strip.background = element_blank(),
+    strip.text = element_blank()
+    )
+
+print(plot1)
+```
+
+
+```{r plot2}
+plotdata2 <-
+  post_num_user %>%
+  .[, category_google := factor(category_google, 
+                                levels = c("Residential",
+                                           "Workplaces",
+                                           "Retail & recreation",
+                                           "Parks",
+                                           "Transit stations",
+                                           "Grocery & pharmacy"))]
+
+
+plot2 <-
+  ggplot(plotdata2,
+         aes(post_num,
+             after_stat(density),
+             color = category_google)) +
+  geom_freqpoly(binwidth = 1,
+                linewidth = 0.4) +
+  scale_color_manual(values = pal) +
+  coord_cartesian(xlim = c(0, 6)) +
+  labs(x = "Number of posts",
+       y = "Density of users") +
+  theme_bw() +
+  theme(
+    axis.title = element_text(size = unit(8, "pt")),
+    axis.text = element_text(size = unit(7, "pt")),
+    legend.text = element_text(size = unit(8, "pt")),
+    legend.position = "bottom",
+    legend.title = element_blank(),
+    legend.key.height = unit(10, "pt"),
+    legend.margin = margin(t = -5, l = 0, r = -20, b = -10),
+    legend.spacing.x = unit(5, "pt"),  ### 需要调整
+    panel.grid.minor = element_blank()
+    ) +
+  guides(color = guide_legend(nrow = 2))
+
+# print(plot2)
+```
+
+
+```{r plot_merge}
+plot_result <-
+  plot1 / plot2 +
+  plot_layout(nrow = 2, heights = c(2, 1))
+```
+
+
+```{r save_plot, eval=TRUE}
+time <-
+  str_sub(as.character(now()), start = 1, end = -8) %>%
+  str_replace(" ", "_")
+
+filename_temp <- paste0("04_plot_", time, ".pdf")
+
+ggsave(filename = filename_temp,
+       plot = plot_result,
+       path = odir_result,
+       width = 121,
+       height = 130,
+       units = "mm",
+       dpi = 300)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+

@@ -5,6 +5,8 @@ date: "2023-03-05"
 output: html_document
 ---
 
+通过筛选poi和用户对checkins进行清洗和预处理，得到的数据可以直接用来进行计算绘图。
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 knitr::opts_knit$set(root.dir = "~/Socialmedia_Mobility/")
