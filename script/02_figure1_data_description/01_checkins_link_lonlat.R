@@ -42,7 +42,7 @@ checkins_lonlat <-
 
 
 # ------ save result ------
-fwrite(checkins_lonlat, paste0(odir, "02_checkins_link_lonlat.csv.gz"))
+fwrite(checkins_lonlat, paste0(odir, "02_checkins_link_lonlat.csv.gz")) 
 
   
   
