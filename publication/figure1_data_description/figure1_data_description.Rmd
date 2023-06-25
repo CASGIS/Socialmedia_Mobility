@@ -22,27 +22,15 @@ library(scales)
 library(lubridate)
 
 ifile_checkins_lonlat <-
-  "result/01_checkins_link_lonlat.csv"
+  "data/processed/01_checkins_link_lonlat.csv"
 
-odir_result <- 
-  "result/"
+odir_plot <- 
+  "publication/figure1_data_description/"
 ```
 
 
 ```{r color_setting, include=FALSE}
-# 查看颜色盘
-par(mar=c(3,4,2,2))
-display.brewer.all(
-  # "div", "qual", "seq"
-  type = "all", 
-  # Number of different colors in the palette, minimum 3, maximum depending on palette
-  n = NULL 
-  )
-
-# 选择颜色
-display.brewer.pal(n = 9, name = "Oranges")
-pal_map <- brewer.pal(n = 9, name = "Oranges")
-pal_map
+source(file = "publication/color_setting.R")
 ```
 
 
