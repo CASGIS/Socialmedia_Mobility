@@ -20,28 +20,35 @@ library(ggspatial)
 library(RColorBrewer)
 library(scales)
 library(lubridate)
-
-ifile_checkins_lonlat <-
-  "data/processed/01_checkins_link_lonlat.csv"
+library(janitor)
+library(lemon)
+library(patchwork)
 
 odir_plot <- 
   "publication/figure1_data_description/"
-```
 
-
-```{r color_setting, include=FALSE}
+# preset colors
 source(file = "publication/color_setting.R")
+pal_map <- brewer.pal(n = 9, name = "Oranges")
 ```
 
 
-```{r inputdata}
-## WGS 84 大地坐标
-crs_84 <- st_crs("EPSG:4326")  
-## Albers Equal Area Conic投影
-crs_al <- st_crs("+proj=aea +lat_1=25 +lat_2=47 +lon_0=105") 
+# figure 1a
 
+```{r file_path_figure_1a}
+ifile_checkins_lonlat <-
+  "data/processed/02_checkins_link_lonlat.csv.gz"
+```
+
+
+```{r input_data_figure_1a}
 checkins_lonlat <-
   fread(ifile_checkins_lonlat)
+
+## WGS-84 geodetic coordinate
+crs_84 <- st_crs("EPSG:4326")  
+## Albers Equal Area Conic projection
+crs_al <- st_crs("+proj=aea +lat_1=25 +lat_2=47 +lon_0=105") 
 
 china_all <-
     sf::st_read("https://geo.datav.aliyun.com/areas_v3/bound/100000_full.json") %>%
@@ -53,78 +60,75 @@ hainan <-
 
 
 ```{r China_border}
-# 去除：海南省，九段线
+# remove: Hainan province and nine-dotted line
 tmp_china <-  
     china_all %>%
     filter(!adcode %in% c("460000", "100000_JD")) %>%
     st_make_valid() %>%
     st_union()
 
-# 海南省去除 三沙市
+# remove Sansha city from Hainan province
 tmp_hainan <-  
     hainan %>%
     filter(!name %in% "三沙市") %>%
     st_make_valid() %>%
     st_union()
 
-# 组合起来，中国边框
+# union and generate Chinese border
 china_border <- 
   st_union(tmp_china, tmp_hainan) %>% 
   st_as_sf()
 ```
 
 
-```{r test_plot_China_border, eval=FALSE}
-ggplot() +
-geom_sf(data = china_border)
+```{r plot_China_border, eval=FALSE}
+ggplot() + geom_sf(data = china_border)
 
-ggplot() +
-geom_sf(data = tmp_hainan)
+ggplot() + geom_sf(data = tmp_hainan)
 
-ggplot() +
-geom_sf(data = tmp_china)
+ggplot() + geom_sf(data = tmp_china)
 ```
 
 
-```{r}
-checkins_grid <-
-  # 按照经纬度进行切片
+```{r generate_raster_China}
+checkins_grid_china <-
+  # slice by latitude and longitude at 0.1 degree resolution
   checkins_lonlat[, ':='(lon_cut = cut(lon, 
                                        breaks = seq(-180, 180, 0.1),
                                        include.lowest = T), 
                          lat_cut = cut(lat,
                                        breaks = seq(-90, 90, 0.1),
                                        include.lowest = T))] %>% 
-  # 统计每个切片的签到数量
-  .[, .(checkins_num = sum(checkins_num, na.rm = T)), by = .(lon_cut, lat_cut)] %>%
-  .[, checkins_num_log := log(checkins_num, base = 10)] %>%
-  # 计算每个切片的中心点经纬度
+  # count the number of check-ins per slice
+  .[, .(checkins_num_grid = sum(checkins_num, na.rm = T)), by = .(lon_cut, lat_cut)] %>%
+  .[, checkins_num_grid_log := log(checkins_num_grid, base = 10)] %>%
+  # calculate the latitude and longitude of the center point of each slice
   .[, ':='(lon_grid = as.double(lon_cut)*0.1-180.05,
            lat_grid = as.double(lat_cut)*0.1-90.05)]
 
-checkins_raster <-
-  # 生成raster，使用经纬度和属性值
-  rasterFromXYZ(xyz = checkins_grid[, .(lon_grid, lat_grid, checkins_num_log)],
+checkins_raster_china <-
+  # generate raster
+  rasterFromXYZ(xyz = checkins_grid_china[, .(lon_grid, lat_grid, checkins_num_grid_log)],
                 res = c(0.1, 0.1),
                 crs = "EPSG:4326") %>%
-  # mask操作
+  # mask by Chinese border
   raster::mask(st_transform(china_border, crs_84)) %>%
   stars::st_as_stars() %>%
   st_as_sf() %>%
-  # 转换为投影坐标系
+  # convert to Albers Equal Area Conic projection projection
   st_transform(crs = crs_al)
 
 # ggplot(checkins_raster) +
-#   geom_sf(mapping = aes(fill = checkins_num_log))
+#   geom_sf(mapping = aes(fill = checkins_num_grid_log))
 ```
 
 
-```{r plotting}
-# 绘制全域
-p1 <-
+```{r plot_figure_1a}
+# map the whole of China
+p_1a_main <-
   ggplot() +
-  geom_sf(data = checkins_raster,
-          mapping = aes(fill = checkins_num_log),
+  geom_sf(data = checkins_raster_china,
+          mapping = aes(fill = checkins_num_grid_log),
           color = NA) +
     scale_fill_gradientn(name = "Number of posts",
                          limits = c(0, 7),
@@ -133,10 +137,6 @@ p1 <-
                                    expression(10^2), expression(10^3),
                                    expression(10^4), expression(10^5),
                                    expression(10^6), expression(10^7)),
-                         # low = rgb(255, 248, 225, maxColorValue = 255),
-                         # mid= rgb(255, 236, 179, maxColorValue = 255),
-                         # high = rgb(153, 52, 4, maxColorValue = 255),
-                         # fill = pal_map,
                          colors = pal_map,
                          na.value = "transparent",
                          guide = "colourbar",
@@ -146,10 +146,10 @@ p1 <-
 
 
 
-# 截取南海
-p2 <-
-    p1 +
-    coord_sf(crs = crs_84) + ## 将投影坐标转换为大地坐标,方便下面使用经纬度截取
+# sub-plot: the South China Sea area
+p_1a_sub <-
+    p_1a_main +
+    coord_sf(crs = crs_84) + # convert to geodetic coordinates
     scale_x_continuous(expand = c(0, 0), 
                        limits = c(107, 122), 
                        breaks = seq(70, 140, 10)) +
@@ -162,17 +162,18 @@ p2 <-
           axis.ticks = element_blank(),
           axis.title = element_blank())
 
-# 图形拼接
-p3 <-
-  p1 + 
-  coord_sf(crs = crs_al, # 投影坐标系
-           default_crs = crs_84) + # 大地坐标，方便后续使用经纬度定位标签位置
-  # annotate(geom = "text",   # 审图号
-  #          x = 80, 
+# merge plot
+p_1a <-
+  p_1a_main + 
+  coord_sf(crs = crs_al,
+           default_crs = crs_84) + 
+  # # approval number
+  # annotate(geom = "text",
+  #          x = 80,
   #          y = 18,
   #          label = "GS(2019)6379",
-  #          vjust = 0, 
-  #          hjust = 0) +  
+  #          vjust = 0,
+  #          hjust = 0) +
   scale_x_continuous(expand = c(0, 0),
                      limits = c(72, 142),
                      breaks = seq(70, 140, 10)) +
@@ -190,33 +191,327 @@ p3 <-
         legend.background = element_rect(fill = NA, color = NA),
         legend.margin = margin(t = 0, l = 2)  ### 需要调整
         ) +
-  annotation_scale(location = "bl") + # 设置距离刻度尺
+  # set the distance scale
+  annotation_scale(location = "bl") + 
   annotation_north_arrow(location = "tl", 
                          style = north_arrow_nautical(fill = c("grey40", 
                                                                "white"), 
                                                       line_col = "grey20")) +
-  annotation_custom(ggplotGrob(p2), ## 子图插入
+  # insert sub-plot
+  annotation_custom(ggplotGrob(p_1a_sub), 
                     xmin = 122,
                     xmax = 138, 
                     ymin = 15,
                     ymax = 29)
+
+# print(p_1a)
 ```
 
 
-```{r save_plot, eval=TRUE}
-time <-
-  str_sub(as.character(now()), start = 1, end = -8) %>%
-  str_replace(" ", "_")
-
-filename_temp <- paste0("02_plot_", time, ".jpg")
-
-ggsave(filename = filename_temp,
-       plot = p3,
-       path = odir_result,
+```{r save_plot_1a, eval=TRUE}
+ggsave(filename = paste0("figure_1a.pdf"),
+       plot = p_1a,
+       path = odir_plot,
        width = 180,
        height = 210,
        units = "mm",
        dpi = 300)
 ```
+
+
+# figure 1b
+
+```{r file_path_figure_1b}
+ifile_beijing_dlg_1 <-
+  "data/raw/figure1_Beijing_DLG/J50.gdb.zip"
+
+ifile_beijing_dlg_2 <-
+  "data/raw/figure1_Beijing_DLG/K50.gdb.zip"
+```
+
+
+```{r input_data_figure1b}
+# CGCS2000
+beijing_dlg_1 <-
+  st_layers(ifile_beijing_dlg_1)
+
+# CGCS2000
+beijing_dlg_2 <-
+  st_layers(ifile_beijing_dlg_2)
+```
+
+
+```{r extract_border_and_road}
+beijing_adm <-
+  c("东城区", "西城区", "朝阳区", "丰台区", "石景山区", "海淀区", "顺义区", 
+    "通州区", "大兴区", "房山区", "门头沟区", "昌平区", "平谷区", "密云区",
+    "怀柔区", "延庆区")
+
+# border
+beijing_border_1 <-
+  st_read(dsn = ifile_beijing_dlg_1, layer = "BOUA") %>%
+  filter(NAME %in% beijing_adm)
+
+beijing_border_2 <-
+  st_read(dsn = ifile_beijing_dlg_2, layer = "BOUA") %>%
+  filter(NAME %in% beijing_adm)
+
+sf_use_s2(FALSE)
+
+beijing_border <-
+  bind_rows(beijing_border_1, beijing_border_2) %>%
+  group_by(PAC) %>%
+  summarise(SHAPE = st_union(SHAPE),
+            SHAPE_Area = sum(SHAPE_Area, na.rm = T)) %>%
+  st_transform(crs = crs_84)
+
+# road
+beijing_road_1 <-
+  st_read(dsn = ifile_beijing_dlg_1, layer = "LRDL")
+
+beijing_road_2 <-
+  st_read(dsn = ifile_beijing_dlg_2, layer = "LRDL")
+
+beijing_road <-
+  bind_rows(beijing_road_1, beijing_road_2) %>%
+  st_transform(crs = crs_84)
+```
+
+
+```{r plot_beijing_dlg, eval=FALSE}
+ggplot() + 
+  geom_sf(data = beijing_road,
+          color = "grey80",
+          linewidth = 0.2) +
+  geom_sf(data = beijing_border,
+          fill = NA,
+          color = "grey50",
+          linewidth = 0.2) +
+  scale_x_continuous(expand = c(0, 0),
+                     limits = c(116, 116.8)) +
+  scale_y_continuous(expand = c(0, 0),
+                     limits = c(39.65, 40.25)) +
+  theme_bw()
+```
+
+
+```{r generate_raster_beijing}
+checkins_grid_beijing <-
+  # slice by latitude and longitude at 0.001 degree resolution
+  checkins_lonlat[, ':='(lon_cut = cut(lon, 
+                                       breaks = seq(-180, 180, 0.001),
+                                       include.lowest = T), 
+                         lat_cut = cut(lat,
+                                       breaks = seq(-90, 90, 0.001),
+                                       include.lowest = T))] %>% 
+  # count the number of check-ins per slice
+  .[, .(checkins_num_grid = sum(checkins_num, na.rm = T)), by = .(lon_cut, lat_cut, category_google)] %>%
+  .[, checkins_num_grid_log := log(checkins_num_grid, base = 10)] %>%
+  # calculate the latitude and longitude of the center point of each slice
+  .[, ':='(lon_grid = as.double(lon_cut)*0.001-180.0005,
+           lat_grid = as.double(lat_cut)*0.001-90.0005)]
+
+summary(checkins_grid_beijing)
+```
+
+
+```{r plot_figure_1b}
+checkins_grid_beijing_filter <-
+  # filter the minimum number of checkins displayed
+  checkins_grid_beijing[checkins_num_grid_log >= 3] %>%
+  .[, category_google := factor(category_google, 
+                                levels = c("Residential",
+                                           "Workplaces",
+                                           "Retail & recreation",
+                                           "Parks",
+                                           "Transit stations",
+                                           "Grocery & pharmacy"))] %>%
+  .[!is.na(category_google)]
+
+p_1b <-
+  ggplot() +
+  coord_sf(crs = crs_al,
+           default_crs = crs_84) +
+  geom_sf(data = beijing_road,
+          color = "grey70",
+          linewidth = 0.2) +
+  geom_sf(data = beijing_border,
+          fill = NA,
+          color = "grey20",
+          linewidth = 0.3) +
+  geom_point(data = checkins_grid_beijing_filter,
+             mapping = aes(x = lon_grid,
+                           y = lat_grid,
+                           color = category_google,
+                           size = checkins_num_grid_log),
+             alpha = 0.5  ### 需要调整
+             ) +
+  scale_color_manual(name = NULL,
+                     values = color_primary) +
+  scale_size(name = "Number of\nposts",
+             range = c(1, 6),  ### 需要调整
+             breaks = seq(0, 5, 1),
+             labels = c(expression(10^0),
+                        expression(10^1),
+                        expression(10^2),
+                        expression(10^3),
+                        expression(10^4),
+                        expression(10^5))) +
+  # adjust the rendering scope of map
+  scale_x_continuous(expand = c(0, 0),
+                     limits = c(116.12, 116.62),
+                     breaks = seq(116.1, 116.6, 0.1)) +
+  scale_y_continuous(expand = c(0, 0),
+                     limits = c(39.74, 40.04),
+                     breaks = seq(39.7, 40.1, 0.1)) +
+  theme_bw() +
+  theme(axis.title = element_blank(),
+        axis.text = element_text(color = "black"),
+        legend.position = "bottom",
+        legend.text = element_text(size = unit(6, "pt"),  ### 需要调整
+                                   lineheight = unit(0.5, "pt")  ### 需要调整
+                                   ),
+        # legend.margin = margin(t = -5, l = 0, r = 0, b = 0),  ### 需要调整
+        legend.margin = margin(t = -50, l = 0, r = 0, b = 0),  ### 需要调整
+        legend.box.margin = margin(l = -35),  ### 需要调整
+        legend.spacing.x = unit(0, "pt"),  ### 需要调整
+        legend.title = element_text(margin = margin(l = unit(20, "pt")), ### 需要调整
+                                    size = unit(6, "pt")  ### 需要调整
+                                    ),
+        legend.key.height = unit(10, "pt") ### 需要调整
+        ) +
+  guides(color = guide_legend(nrow = 2),
+         size = guide_legend(nrow = 1, 
+                             title.vjust = 0.5
+                             )) +
+  annotation_scale(location = "bl") +
+  annotation_north_arrow(location = "tl", 
+                         style = north_arrow_nautical(fill = c("grey40", 
+                                                               "white"), 
+                                                      line_col = "grey20"))
+
+# print(p_1b)
+```
+
+
+```{r save_plot_1b, eval=TRUE}
+ggsave(filename = paste0("figure_1b.pdf"),
+       plot = p_1b,
+       path = odir_plot,
+       width = 121,
+       height = 130,
+       units = "mm",
+       dpi = 300)
+```
+
+
+# figure 1c
+
+```{r file_path_figure_1c}
+# ifile_checkins <-
+#   "~/weibo/17_checkins_cleaning/03_full_sample/data/06_checkins_filter.csv.gz"
+```
+
+
+```{r input_data_figure_1c}
+# checkins <-
+#   fread(ifile_checkins,
+#         select = c(userid = "character",
+#                    created_at = "Date",
+#                    category_google = "character"))
+```
+
+
+```{r plot_figure_1c}
+checkins_num_log <-
+  checkins_lonlat[, checkins_num_log := log(checkins_num, base = 10)] %>%
+    .[, category_google := factor(category_google, 
+                                  levels = c("Residential",
+                                             "Workplaces",
+                                             "Retail & recreation",
+                                             "Parks",
+                                             "Transit stations",
+                                             "Grocery & pharmacy"))] %>%
+  .[!is.na(category_google)]
+
+p_1c <-
+  ggplot() +
+  geom_histogram(data = checkins_num_log,
+                 mapping = aes(x = checkins_num_log,
+                               fill = category_google), 
+                 binwidth = 0.05  # 0.02
+                 ) +
+  geom_text(data = 
+              checkins_num_log[, .(category_google = unique(category_google))],
+            mapping = aes(label = category_google,
+                          x = 4,
+                          y = 10^4.5),
+            hjust = 1,
+            size = unit(2.5, "pt")) +
+  facet_rep_wrap(~category_google,
+                 repeat.tick.labels = T,
+                 nrow = 2,
+                 scales = "fixed"
+                 ) +
+  scale_x_continuous(breaks = seq(0, 4, 1),
+                     labels = c(expression(10^0),
+                                expression(10^1),
+                                expression(10^2),
+                                expression(10^3),
+                                expression(10^4))) +
+  scale_y_log10(breaks = 10^seq(0, 5, 1),
+                labels = c(expression(10 ^ 0),
+                           expression(10 ^ 1),
+                           expression(10 ^ 2),
+                           expression(10 ^ 3),
+                           expression(10 ^ 4),
+                           expression(10 ^ 5))) +
+  scale_fill_manual(values = color_primary) +
+  coord_cartesian(xlim = c(0, 4)) +
+  labs(x = "Number of posts located in specific POIs",
+       y = "Number of posts") +
+  theme_bw() +
+  theme(axis.title = element_text(size = unit(8, "pt")),
+        axis.text = element_text(size = unit(7, "pt")),
+        aspect.ratio = 1,
+        panel.grid = element_blank(),
+        legend.position = "none",
+        strip.background = element_blank(),
+        strip.text = element_blank())
+
+# print(p_1c)
+```
+
+
+```{r save_plot_1c, eval=TRUE}
+ggsave(filename = paste0("figure_1c.pdf"),
+       plot = p_1c,
+       path = odir_plot,
+       width = 121,
+       height = 80,
+       units = "mm",
+       dpi = 300)
+```
+
+
+# figure 1
+
+```{r save_plot_merged, eval=TRUE}
+p_1 <-
+  p_1a / 
+  (p_1b + p_1c + plot_layout(nrow = 1, heights = c(1, 1), widths = c(1, 1))) + 
+  plot_layout(nrow = 2, heights = c(3, 2), widths = c(1, 1))
+
+ggsave(filename = paste0("figure_1.png"),
+       plot = p_1,
+       path = odir_plot,
+       width = 180,
+       height = 225,
+       units = "mm",
+       dpi = 300)
+```
+
+
+
 
 
