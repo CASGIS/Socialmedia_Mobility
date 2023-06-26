@@ -22,7 +22,7 @@ library(scales)
 library(lubridate)
 library(janitor)
 library(lemon)
-library(patchwork)
+library(cowplot)
 
 odir_plot <- 
   "publication/figure1_data_description/"
@@ -130,19 +130,19 @@ p_1a_main <-
   geom_sf(data = checkins_raster_china,
           mapping = aes(fill = checkins_num_grid_log),
           color = NA) +
-    scale_fill_gradientn(name = "Number of posts",
-                         limits = c(0, 7),
-                         breaks = seq(0, 7, 1),
-                         label = c(expression(10^0), expression(10^1),
-                                   expression(10^2), expression(10^3),
-                                   expression(10^4), expression(10^5),
-                                   expression(10^6), expression(10^7)),
-                         colors = pal_map,
-                         na.value = "transparent",
-                         guide = "colourbar",
-                         aesthetics = "fill") +
-    geom_sf(data = china_all,
-            size = .2, fill = "transparent", color = "#060d1b")
+  scale_fill_gradientn(name = "Number of posts",
+                       limits = c(0, 7),
+                       breaks = seq(0, 7, 1),
+                       label = c(expression(10^0), expression(10^1),
+                                 expression(10^2), expression(10^3),
+                                 expression(10^4), expression(10^5),
+                                 expression(10^6), expression(10^7)),
+                       colors = pal_map,
+                       na.value = "transparent",
+                       guide = "colourbar",
+                       aesthetics = "fill") +
+  geom_sf(data = china_all,
+          size = .2, fill = "transparent", color = "#060d1b")
 
 
 
@@ -181,16 +181,16 @@ p_1a <-
                      limits = c(17, 55.5), 
                      breaks = seq(10, 60, 10)) +
   guides(fill = guide_colorbar(title.position = "left",
-                               barheight = 20)) + ### 需要调整
+                               barheight = 20.5,
+                               barwidth = 1)) +
   theme_bw() +
-  theme(axis.text = element_text(color = "black"),
+  theme(axis.text = element_text(color = "black", size = 8),
         axis.title = element_blank(),
-        legend.title = element_text(angle = 90, hjust = 0.5),  ## 需要调整
+        legend.title = element_text(size = 10, angle = 90, hjust = 0.5),
         legend.text = element_text(size = 8),
         legend.position = "right",
         legend.background = element_rect(fill = NA, color = NA),
-        legend.margin = margin(t = 0, l = 2)  ### 需要调整
-        ) +
+        legend.margin = margin(t = 0, l = 0)) +
   # set the distance scale
   annotation_scale(location = "bl") + 
   annotation_north_arrow(location = "tl", 
@@ -205,17 +205,6 @@ p_1a <-
                     ymax = 29)
 
 # print(p_1a)
-```
-
-
-```{r save_plot_1a, eval=TRUE}
-ggsave(filename = paste0("figure_1a.pdf"),
-       plot = p_1a,
-       path = odir_plot,
-       width = 180,
-       height = 210,
-       units = "mm",
-       dpi = 300)
 ```
 
 
@@ -305,7 +294,8 @@ checkins_grid_beijing <-
                                        breaks = seq(-90, 90, 0.001),
                                        include.lowest = T))] %>% 
   # count the number of check-ins per slice
-  .[, .(checkins_num_grid = sum(checkins_num, na.rm = T)), by = .(lon_cut, lat_cut, category_google)] %>%
+  .[, .(checkins_num_grid = sum(checkins_num, na.rm = T)), 
+    by = .(lon_cut, lat_cut, category_google)] %>%
   .[, checkins_num_grid_log := log(checkins_num_grid, base = 10)] %>%
   # calculate the latitude and longitude of the center point of each slice
   .[, ':='(lon_grid = as.double(lon_cut)*0.001-180.0005,
@@ -334,22 +324,21 @@ p_1b <-
            default_crs = crs_84) +
   geom_sf(data = beijing_road,
           color = "grey70",
-          linewidth = 0.2) +
+          linewidth = 0.1) +
   geom_sf(data = beijing_border,
           fill = NA,
           color = "grey20",
-          linewidth = 0.3) +
+          linewidth = 0.2) +
   geom_point(data = checkins_grid_beijing_filter,
              mapping = aes(x = lon_grid,
                            y = lat_grid,
                            color = category_google,
                            size = checkins_num_grid_log),
-             alpha = 0.5  ### 需要调整
-             ) +
+             alpha = 0.5) +
   scale_color_manual(name = NULL,
                      values = color_primary) +
-  scale_size(name = "Number of\nposts",
-             range = c(1, 6),  ### 需要调整
+  scale_size(name = "Number\nof posts",
+             range = c(0, 4),
              breaks = seq(0, 5, 1),
              labels = c(expression(10^0),
                         expression(10^1),
@@ -359,32 +348,27 @@ p_1b <-
                         expression(10^5))) +
   # adjust the rendering scope of map
   scale_x_continuous(expand = c(0, 0),
-                     limits = c(116.12, 116.62),
+                     limits = c(116.16, 116.62),
                      breaks = seq(116.1, 116.6, 0.1)) +
   scale_y_continuous(expand = c(0, 0),
                      limits = c(39.74, 40.04),
                      breaks = seq(39.7, 40.1, 0.1)) +
   theme_bw() +
   theme(axis.title = element_blank(),
-        axis.text = element_text(color = "black"),
+        axis.text = element_text(color = "black", size = 6),
         legend.position = "bottom",
-        legend.text = element_text(size = unit(6, "pt"),  ### 需要调整
-                                   lineheight = unit(0.5, "pt")  ### 需要调整
-                                   ),
-        # legend.margin = margin(t = -5, l = 0, r = 0, b = 0),  ### 需要调整
-        legend.margin = margin(t = -50, l = 0, r = 0, b = 0),  ### 需要调整
-        legend.box.margin = margin(l = -35),  ### 需要调整
-        legend.spacing.x = unit(0, "pt"),  ### 需要调整
-        legend.title = element_text(margin = margin(l = unit(20, "pt")), ### 需要调整
-                                    size = unit(6, "pt")  ### 需要调整
-                                    ),
-        legend.key.height = unit(10, "pt") ### 需要调整
-        ) +
-  guides(color = guide_legend(nrow = 2),
+        legend.text = element_text(size = unit(5, "pt"),
+                                   margin = margin(l = 0)),
+        legend.title = element_text(margin = margin(l = 10, r = 4),
+                                    size = unit(5, "pt")),
+        legend.margin = margin(t = -8, l = 0, r = 0, b = 0),
+        legend.box.margin = margin(l = -35),
+        legend.spacing.x = unit(0, "pt"),
+        legend.key.height = unit(7, "pt")) +
+  guides(color = guide_legend(nrow = 3),
          size = guide_legend(nrow = 1, 
-                             title.vjust = 0.5
-                             )) +
-  annotation_scale(location = "bl") +
+                             title.vjust = 0.5)) +
+  annotation_scale(location = "bl", text_cex = 0.5) +
   annotation_north_arrow(location = "tl", 
                          style = north_arrow_nautical(fill = c("grey40", 
                                                                "white"), 
@@ -394,33 +378,7 @@ p_1b <-
 ```
 
 
-```{r save_plot_1b, eval=TRUE}
-ggsave(filename = paste0("figure_1b.pdf"),
-       plot = p_1b,
-       path = odir_plot,
-       width = 121,
-       height = 130,
-       units = "mm",
-       dpi = 300)
-```
-
-
 # figure 1c
-
-```{r file_path_figure_1c}
-# ifile_checkins <-
-#   "~/weibo/17_checkins_cleaning/03_full_sample/data/06_checkins_filter.csv.gz"
-```
-
-
-```{r input_data_figure_1c}
-# checkins <-
-#   fread(ifile_checkins,
-#         select = c(userid = "character",
-#                    created_at = "Date",
-#                    category_google = "character"))
-```
-
 
 ```{r plot_figure_1c}
 checkins_num_log <-
@@ -439,20 +397,18 @@ p_1c <-
   geom_histogram(data = checkins_num_log,
                  mapping = aes(x = checkins_num_log,
                                fill = category_google), 
-                 binwidth = 0.05  # 0.02
-                 ) +
+                 binwidth = 0.05) +
   geom_text(data = 
               checkins_num_log[, .(category_google = unique(category_google))],
             mapping = aes(label = category_google,
                           x = 4,
                           y = 10^4.5),
             hjust = 1,
-            size = unit(2.5, "pt")) +
+            size = unit(2, "pt")) +
   facet_rep_wrap(~category_google,
                  repeat.tick.labels = T,
                  nrow = 2,
-                 scales = "fixed"
-                 ) +
+                 scales = "fixed") +
   scale_x_continuous(breaks = seq(0, 4, 1),
                      labels = c(expression(10^0),
                                 expression(10^1),
@@ -472,8 +428,8 @@ p_1c <-
        y = "Number of posts") +
   theme_bw() +
   theme(axis.title = element_text(size = unit(8, "pt")),
-        axis.text = element_text(size = unit(7, "pt")),
-        aspect.ratio = 1,
+        axis.title.x = element_text(margin = margin(t = 8)),
+        axis.text = element_text(size = unit(6, "pt")),
         panel.grid = element_blank(),
         legend.position = "none",
         strip.background = element_blank(),
@@ -483,30 +439,30 @@ p_1c <-
 ```
 
 
-```{r save_plot_1c, eval=TRUE}
-ggsave(filename = paste0("figure_1c.pdf"),
-       plot = p_1c,
-       path = odir_plot,
-       width = 121,
-       height = 80,
-       units = "mm",
-       dpi = 300)
-```
-
-
 # figure 1
 
 ```{r save_plot_merged, eval=TRUE}
-p_1 <-
-  p_1a / 
-  (p_1b + p_1c + plot_layout(nrow = 1, heights = c(1, 1), widths = c(1, 1))) + 
-  plot_layout(nrow = 2, heights = c(3, 2), widths = c(1, 1))
+plot_align <-
+  align_plots(p_1a, p_1b, align = "v", axis = "l")
 
-ggsave(filename = paste0("figure_1.png"),
+plot_bottom <-
+  plot_grid(plot_align[[2]], p_1c, 
+            labels = c("b", "c"), hjust = -0.75, vjust = 0,
+            align = "h", axis = "bt",
+            rel_widths = c(1, 1.2),
+            nrow = 1, ncol = 2)
+
+p_1 <- 
+  plot_grid(plot_align[[1]], plot_bottom, 
+            labels = c("a", ""),
+            rel_heights = c(2, 1.20),
+            nrow = 2, ncol = 1)
+
+ggsave(filename = paste0("figure_1.pdf"),
        plot = p_1,
        path = odir_plot,
        width = 180,
-       height = 225,
+       height = 200,
        units = "mm",
        dpi = 300)
 ```
