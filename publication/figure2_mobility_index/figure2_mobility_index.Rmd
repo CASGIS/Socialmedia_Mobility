@@ -1,0 +1,471 @@
+---
+title: "figure2_mobility_index"
+author: "Kaixin"
+date: '2023-06-27'
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "~/Socialmedia_Mobility/")
+```
+
+
+```{r initial, include=FALSE}
+library(tidyverse)
+library(data.table)
+library(lubridate)
+library(zoo)
+library(patchwork)
+library(lemon)
+source(file = "publication/color_setting.R")
+
+ifile_visits <- 
+  "data/processed/03_visits_in_places.csv"
+odir_plot <- 
+  "publication/figure2_mobility_index/"
+```
+
+
+```{r input_data}
+visits <- 
+  fread(ifile_visits)
+```
+
+
+# figure 2a
+
+```{r 7_days_moving_average}
+visits_7MA <-
+  visits[order(category_google, created_at)] %>%
+  .[, postcount_7MA := rollmean(postcount, k = 7, fill = NA), 
+    by = .(category_google)] %>%
+  .[, day_of_week := wday(created_at)]
+```
+
+
+```{r compute_relative_value}
+# baseline: from July 7st to Dec 31st 2020
+baseline <-
+  visits_7MA %>%
+  .[created_at >= ymd("2019-07-01") & created_at < ymd("2020-01-01")] %>%
+  .[, .(baseline = median(postcount_7MA, na.rm = T)), 
+    by = .(category_google, day_of_week)]
+
+# comparing with baseline days to calculate percentage change value
+visits_7MA_relative <-
+  merge(visits_7MA,
+        baseline,
+        all.x = T,
+        by = c("category_google", "day_of_week")) %>%
+  .[, postcount_7MA_relative := postcount_7MA/baseline-1] %>%
+  .[, .(category_google, created_at, postcount_7MA_relative)]
+```
+
+
+```{r annotation}
+rect_festival <- 
+  data.frame(
+    xmin = ymd("2020-01-01",
+               "2020-01-24",
+               "2020-04-04",
+               "2020-05-01",
+               "2020-06-25",
+               "2020-10-01"),
+    xmax = ymd("2020-01-02",
+               "2020-02-02",
+               "2020-04-06",
+               "2020-05-05",
+               "2020-06-27",
+               "2020-10-08")
+    )
+
+text_rect_festival <-
+  data.frame(
+    label = c("a", "b", "c", "d", "e", "f"),
+    x = rect_festival$xmin + (rect_festival$xmax - rect_festival$xmin)/2
+    )
+
+line_keyevents <-
+  data.frame(
+    x = ymd("2020-01-10",
+            "2020-01-20",
+            "2020-01-25",
+            "2020-02-28"
+            ),
+    xend = ymd("2020-01-10",
+               "2020-01-20",
+               "2020-01-25",
+               "2020-02-28"
+               )
+  )
+
+text_line_keyevents_plot1 <-
+  data.frame(
+    label = c("A", "B", "C", "D"),
+    x = c(ymd("2020-01-10",
+              "2020-01-18",
+              "2020-01-27",
+              "2020-02-28"))
+  )
+
+text_line_keyevents_plot2 <-
+  data.frame(
+    label = c("A", "B", "C", "D"),
+    x = line_keyevents$x
+  )
+
+rect_covid_period <-
+  data.frame(xmin = ymd("2020-01-20"),
+             xmax = ymd("2020-02-28"))
+```
+
+
+```{r plot_figure_2a}
+plotdata1 <- 
+  visits_7MA_relative %>%
+  .[, category_google := factor(category_google,
+                               levels = c("Residential",
+                                          "Workplaces",
+                                          "Retail & recreation",
+                                          "Parks",
+                                          "Transit stations",
+                                          "Grocery & pharmacy"))] %>%
+  # gt: greater than, lt: less than
+  .[, color_setting := ifelse(postcount_7MA_relative > 0, "gt0", "lt0")] 
+
+category <-
+  plotdata1[, .(category_google)] %>% 
+  unique()
+
+text_mean_change <-
+  plotdata1[created_at >= ymd("2020-01-20") & created_at <= ymd("2020-02-28")] %>%
+  .[, .(postcount_7MA_relative_mean = 
+          mean(postcount_7MA_relative, na.rm = T)), by = .(category_google)] %>%
+  .[, text := as.character(round(postcount_7MA_relative_mean*100, digits = 0))] %>%
+  .[postcount_7MA_relative_mean>0, text := paste0("+", text)] %>%
+  .[, text := paste0(text, "%")]
+
+plot1 <-
+  ggplot() +
+  geom_col(data = plotdata1,
+           mapping = aes(x = created_at,
+                         y = postcount_7MA_relative,
+                         fill = color_setting)) +
+  scale_fill_manual(values = c("gt0" = color_primary[1],
+                               "lt0" = color_primary[6])) +
+  geom_rect(data = rect_covid_period,
+            mapping = aes(xmin = ymd("2020-01-20"),
+                          xmax = ymd("2020-02-28")),
+            ymin = -Inf,
+            ymax = Inf,
+            fill = "grey",
+            alpha = 0.5) +
+  geom_rect(data = rect_festival,
+            mapping = aes(xmin = xmin, xmax = xmax),
+            ymin = -Inf,
+            ymax = 0,
+            fill = color_primary[4],
+            alpha = 0.3) +
+  geom_segment(data = line_keyevents,
+               mapping = aes(x = x, xend = xend),
+               y = 0,
+               yend = 0.60,
+               linetype = "dashed",
+               linewidth = 0.5,
+               # color = color_primary[2],
+               color = "#FF4500",
+               alpha = 1) +
+  geom_text(data = text_rect_festival,
+            mapping = aes(x = x, label = label),
+            y = -0.68,
+            color = rgb(0, 100, 0, max = 255),
+            angle = 0,
+            vjust = "inward",
+            hjust = 0.5,
+            size = 3.5) +
+  geom_text(data = text_line_keyevents_plot1,
+            mapping = aes(x = x, label = label),
+            y = 0.64,
+            color = "#FF4500",
+            angle = 0,
+            hjust = 0.5,
+            size = 2.8) +
+  geom_label(data = text_mean_change,
+             mapping = aes(label = text),
+             x = ymd("2020-02-09"),
+             y = 0.44,
+             size = 2.5,
+             alpha = 1,
+             fontface = "bold",
+             color = "black",
+             fill = "white",
+             label.size = NA,
+             label.padding = unit(0.02, "line"),
+             label.r = unit(0.1, "line")) +
+  geom_text(data = category,
+            mapping = aes(label = category_google),
+            x = ymd("2020-11-15"),
+            y = 0.55,
+            size = 4,
+            hjust = 1) +
+  scale_x_date(limits = ymd(c("2020-01-01",
+                              "2020-11-15")),
+               breaks = ymd(c("2020-01-01",
+                              "2020-03-01",
+                              "2020-05-01",
+                              "2020-07-01",
+                              "2020-09-01",
+                              "2020-11-01")),
+               date_labels = "%b") +
+  scale_y_continuous(limits = c(-0.7, 0.7),
+                     breaks = c(-0.5, 0, 0.5),
+                     labels = c("-50%", "0", "+50%"),
+                     expand = c(0, 0)) +
+  labs(y = "Percentage change in number of visits") +
+  facet_rep_wrap(~ category_google, 
+                 ncol = 2,
+                 scales = "fixed",
+                 repeat.tick.labels = T) +
+  theme_bw() +
+  theme(legend.position = "none",
+        axis.title.x = element_blank(),
+        axis.title.y = element_blank(),
+        axis.text = element_text(color = "black"),
+        strip.text = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank())
+
+# print(plot1)
+```
+
+
+# figure 2b
+
+```{r visits_res_nonres}
+visits_res <-
+  visits[category_google == "Residential"]
+
+visits_nonres <-
+  visits[category_google != "Residential"] %>%
+  .[, .(postcount = sum(postcount, na.rm = T)), by = .(created_at)] %>%
+  .[, category_google := "Non-residential"]
+```
+
+
+```{r 7MA_and_compute_relative_value}
+# 7MA process
+visits_res <-
+  visits_res %>%
+  .[order(created_at)] %>%
+  .[, postcount_7MA := rollmean(postcount, k = 7, fill = NA)] %>%
+  .[, day_of_week := wday(created_at)]
+
+visits_nonres <-
+  visits_nonres %>%
+  .[order(created_at)] %>%
+  .[, postcount_7MA := rollmean(postcount, k = 7, fill = NA)] %>%
+  .[, day_of_week := wday(created_at)]
+
+# baseline
+period_baseline <-
+  c(ymd("2019-07-01"):ymd("2019-12-31"))
+
+baseline_res <-
+  visits_res %>%
+  .[created_at %in% period_baseline] %>%
+  .[, .(baseline = median(postcount, na.rm = T)), by = .(day_of_week)]
+
+baseline_res_7MA <-
+  visits_res %>%
+  .[created_at %in% period_baseline] %>%
+  .[, .(baseline_7MA = median(postcount_7MA, na.rm = T)), by = .(day_of_week)]
+  
+baseline_nonres <-
+  visits_nonres %>%
+  .[created_at %in% period_baseline] %>%
+  .[, .(baseline = median(postcount, na.rm = T)), by = .(day_of_week)]
+
+baseline_nonres_7MA <-
+  visits_nonres %>%
+  .[created_at %in% period_baseline] %>%
+  .[, .(baseline_7MA = median(postcount_7MA, na.rm = T)), by = .(day_of_week)]
+
+# comparing with baseline days to calculate percentage change value
+visits_res_relative <-
+  merge(visits_res,
+        baseline_res,
+        all.x = T,
+        by = "day_of_week") %>%
+  merge(baseline_res_7MA,
+        all.x = T,
+        by = "day_of_week") %>%
+  .[, ':='(postcount_relative = postcount/baseline-1,
+           postcount_7MA_relative = postcount_7MA/baseline_7MA-1)]
+
+visits_nonres_relative <-
+  merge(visits_nonres,
+        baseline_nonres,
+        all.x = T,
+        by = "day_of_week") %>%
+  merge(baseline_nonres_7MA,
+        all.x = T,
+        by = "day_of_week") %>%
+  .[, ':='(postcount_relative = postcount/baseline-1,
+           postcount_7MA_relative = postcount_7MA/baseline_7MA-1)]
+```
+
+
+```{r plot_figure_2b}
+plotdata2 <-
+  rbind(visits_res_relative, visits_nonres_relative) %>%
+  .[, .(created_at, category_google, postcount_relative, postcount_7MA_relative)] %>%
+  melt(id.vars = c("created_at", "category_google")) %>%
+  .[, category_google := factor(category_google,
+                                levels = c("Residential", "Non-residential"))]
+
+plot2 <-
+  ggplot() +
+  geom_line(data = plotdata2,
+            mapping = aes(x = created_at,
+                          y = value,
+                          color = category_google,
+                          alpha = variable)) +
+  scale_color_manual(name = "Places",
+                     values = c("Residential" = color_primary[3],
+                                "Non-residential" = color_primary[5])
+                     ) +
+  scale_alpha_manual(values = c("postcount_relative" = 0.3,
+                                "postcount_7MA_relative" = 1)) +
+  geom_hline(yintercept = 0,
+             color = "black",
+             linetype = "solid",
+             alpha = 0.3) +
+  geom_rect(data = rect_covid_period,
+            mapping = aes(xmin = ymd("2020-01-20"),
+                          xmax = ymd("2020-02-28")),
+            ymin = -Inf,
+            ymax = Inf,
+            fill = "grey",
+            alpha = 0.5) +
+  geom_rect(data = rect_festival,
+            mapping = aes(xmin = xmin, xmax = xmax),
+            ymin = -Inf,
+            ymax = 0,
+            fill = color_primary[4],
+            alpha = 0.4) +
+  geom_segment(data = line_keyevents,
+               mapping = aes(x = x, xend = xend),
+               y = 0,
+               yend = 0.60,
+               linetype = "dashed",
+               linewidth = 0.5,
+               # color = color_primary[2],
+               color = "#FF4500",
+               alpha = 1) +
+  geom_text(data = text_rect_festival,
+            mapping = aes(x = x, label = label),
+            y = -0.68,
+            color = rgb(0, 100, 00, max = 255),
+            angle = 0,
+            vjust = "inward",
+            hjust = 0.5,
+            size = 3.5) +
+  geom_text(data = text_line_keyevents_plot2,
+            mapping = aes(x = x, label = label),
+            y = 0.64,
+            color = "#FF4500",
+            angle = 0,
+            hjust = 0.5,
+            size = 3) +
+  scale_x_date(limits = ymd(c("2020-01-01",
+                              "2020-11-15")),
+               breaks = ymd(c("2020-01-01",
+                              "2020-03-01",
+                              "2020-05-01",
+                              "2020-07-01",
+                              "2020-09-01",
+                              "2020-11-01")),
+               date_labels = "%b") +
+  scale_y_continuous(limits = c(-0.7, 0.7),
+                     breaks = c(-0.5, 0, 0.5),
+                     labels = c("-50%", "0", "+50%"),
+                     expand = c(0, 0)) +
+  labs(y = "Percentage change in number of visits") +
+  theme_bw() +
+  theme(legend.position = c(0.775, 0.93),
+        legend.title = element_blank(),
+        legend.background = element_rect(fill = NA, color = NA),
+        legend.text = element_text(size = 11),
+        axis.title.x = element_blank(), 
+        axis.title.y = element_blank(),
+        axis.text = element_text(color = "black"),
+        strip.text = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  guides(alpha = "none",
+         color = guide_legend(nrow = 1))
+
+# print(plot2)
+```
+
+
+# figure 2
+
+```{r caption_text}
+caption_text <-
+  paste0(
+    "A: Start of the Chunyun period", "\n",
+    "B: Announcement of human-to-human transmission", "\n",
+    "C: All provinces in mainland China (except Tibet) launched the highest level of emergency responses", "\n",
+    "D: 18 provinces lowered the level of emergency response", "\n",
+    "a: New Year's Day", "\n",
+    "b: the Spring Festival", "\n",
+    "c: Tomb-sweeping Day", "\n",
+    "d: May Day", "\n",
+    "e: the Dragon Boat Festival", "\n",
+    "f: National Holiday & Mid-autumn Festival")
+```
+
+
+```{r plot_merge}
+ylab_text <- "Percentage change in number of visits"
+
+ylab <- 
+  ggplot(data.frame(ylab = ylab_text, x = 1, y = 1)) +
+  geom_text(aes(x, y, label = ylab), 
+            angle = 90,
+            size = 4.5) +
+  theme_void() +
+  coord_cartesian(clip = "off")
+
+plot1$labels$y <- plot2$labels$y <- " "
+
+plot_merge <-
+  ylab + 
+  (plot1 +
+     plot2 + 
+     labs(caption = caption_text) +
+     theme(plot.caption = element_text(size = 8, hjust = 0, face = "italic")) +
+     plot_layout(heights = c(3.2, 1))
+   ) +
+  plot_layout(ncol = 2, widths = c(1, 30))
+```
+
+
+```{r save_plot}
+figure_name <-
+  "figure2.pdf"
+
+ggsave(plot = plot_merge,
+       filename = figure_name,
+       path = odir_plot,
+       width = 180,
+       height = 220,
+       units = "mm",
+       dpi = 300)
+```
+
+
+
+
