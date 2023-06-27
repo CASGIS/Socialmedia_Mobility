@@ -1,0 +1,332 @@
+---
+title: "02_"
+author: "Kaixin"
+date: "2023-03-14"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "~/SMobility_paper_v2/02_data_validation/")
+```
+
+
+```{r initial, include=FALSE}
+library(tidyverse)
+library(lubridate)
+library(data.table)
+library(grid)
+library(patchwork)
+library(RColorBrewer)
+
+ifile_userinfo <-
+  "~/weibo/01_userinfo/userinfo_merge/result/01_userinfo_merge_sex_age.csv.gz"
+
+ifile_yearbook <-
+  "data/02_yearbook2021_age_sex.csv"
+
+odir_result <-
+  "result/"
+```
+
+
+```{r color_setting}
+# 查看颜色盘
+# display.brewer.all(
+#   # "div", "qual", "seq"
+#   type = "all", 
+#   # Number of different colors in the palette, minimum 3, maximum depending on palette
+#   n = NULL 
+#   )
+
+# 选择颜色
+display.brewer.pal(n = 8, name = "Set1")
+pal <- brewer.pal(n = 8, name = "Set1")
+pal
+```
+
+
+```{r input_data, include=FALSE}
+# 1341万
+userinfo <-
+  fread(ifile_userinfo)
+
+yearbook <-
+  fread(ifile_yearbook) %>%
+  .[, .(age_group = Age, Male_percent, Female_percent)]
+```
+
+
+```{r color_setting, include=FALSE}
+# 查看颜色盘
+# display.brewer.all(
+#   # "div", "qual", "seq"
+#   type = "all", 
+#   # Number of different colors in the palette, minimum 3, maximum depending on palette
+#   n = NULL 
+#   )
+
+# 选择颜色
+display.brewer.pal(n = 8, name = "Set1")
+pal <- brewer.pal(n = 8, name = "Set1")
+pal
+```
+
+```{r userinfo_process}
+# 793万
+userinfo_filter <-
+  userinfo[(gender != "") & (!is.na(age))] %>%
+  .[, age_group := fcase(age >= 0 & age <= 14, "0-14",
+                         age >= 15 & age <= 24, "15-24",
+                         age >= 25 & age <= 59, "25-59",
+                         age >= 60, "60-",
+                         default = NA)] %>%
+  .[!is.na(age_group)]
+
+userinfo_stat <-
+  userinfo_filter[, .(age_group_num = .N), by = .(gender, age_group)] %>%
+  .[, age_group_prop := age_group_num/sum(age_group_num, na.rm = T)]
+```
+
+
+```{r prepare_plotdata}
+userinfo_plotdata <-
+  userinfo_stat[, age_group_prop := ifelse(gender == "Male", age_group_prop*(-1), age_group_prop)] %>%
+  .[, .(age_group, gender, age_group_prop)]
+
+yearbook_plotdata <-
+  melt(yearbook,
+       measure.vars = c("Male_percent", "Female_percent"),
+       variable.name = "gender",
+       value.name = "age_group_prop") %>%
+  .[, gender := str_replace(gender, "_percent", "")] %>%
+  .[, age_group_prop := ifelse(gender == "Male", age_group_prop*(-1), age_group_prop)] %>%
+  .[, .(age_group, gender, age_group_prop)]
+
+plotdata <-
+  rbind(userinfo_plotdata[, datasource := "Weibo"],
+        yearbook_plotdata[, datasource := "Population"])
+
+# add text of percent
+plotdata[, age_group_prop_percent := 
+           paste0(round(age_group_prop, digits = 3)*100, "%")] %>%
+  .[, age_group_prop_percent := str_replace(age_group_prop_percent, "-", "")]
+
+plotdata[, axis_percent := fcase(age_group_prop < 0, age_group_prop - 0.01,
+                                 age_group_prop >= 0, age_group_prop + 0.01)]
+
+summary(plotdata)
+```
+
+
+```{r plotting_v1, eval=FALSE}
+plot2 <-
+  ggplot() +
+  geom_bar(data = plotdata,
+           mapping = aes(x = age_group,
+                         y = age_group_prop,
+                         fill = datasource,
+                         color = datasource,
+                         linetype = datasource),
+           width = 0.4,
+           stat = "identity",
+           position = "identity"
+           ) +
+  scale_fill_manual(name = "source",
+                    values = c(
+                               # "Weibo" = "skyblue",
+                               "Weibo" = "grey80",
+                               "Population" = "NA")) +
+  scale_color_manual(name = "source",
+                     values = c(
+                                # "Weibo" = "skyblue",
+                                "Weibo" = "grey80",
+                                "Population" = "black")) +
+  scale_linetype_manual(name = "source",
+                        values = c("Weibo" = 1,
+                                   "Population" = 2)) +
+  coord_flip(clip = "off") +
+  scale_y_continuous(limits = c(-0.4, 0.4),
+                     breaks = seq(-0.4, 0.4, 0.2),
+                     # labels = c("40%", "30%", "20%", "10%", "0",
+                     #            "10%", "20%", "30%", "40%"),
+                     labels = c("40%", "20%", "0", "20%", "40%")
+                     
+                     ) +
+  # scale_x_discrete(labels = c("0-14" = "14 years\nand under",
+  #                             "15-24" = "15-24 years",
+  #                             "25-59" = "25-59 years",
+  #                             "60-" = "60 years\nand under")) +
+  scale_x_discrete(labels = c("0-14" = "0-14",
+                              "15-24" = "15-24",
+                              "25-59" = "25-59",
+                              "60-" = "60+")) +
+  labs(x = "Age") +
+  theme_bw() +
+  theme(axis.text = element_text(color = "black"),
+        axis.title.x = element_blank(),
+        # axis.title.y = element_text(size = 12),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(
+                                   # size = 12,
+                                   margin = margin(r = 0.5,
+                                                   unit = 'cm')),
+        legend.key.size = unit(1, "line"),
+        legend.box.margin = margin(t = 0.3, unit = "cm"),  ### 修改Legend与上方的间距
+        panel.grid = element_blank()) +
+  annotation_custom(grob = linesGrob(arrow = arrow(type = "open",
+                                                   ends = "both",
+                                                   length = unit(1.25 ,"mm")),
+                                     gp = gpar(col = "black",
+                                               lwd = 1.5)),
+                    xmin = -0.02, xmax = -0.02, ymin = -Inf, ymax = 0) +
+  annotation_custom(grob = linesGrob(arrow = arrow(type = "open",
+                                                   ends = "both",
+                                                   length = unit(1.25 ,"mm")),
+                                     gp = gpar(col = "black",
+                                               lwd = 1.5)),
+                    xmin = -0.02, xmax = -0.02, ymin = 0, ymax = Inf) +
+  annotation_custom(grob = grid::textGrob(label = "Male",
+                                          vjust = -0.6,
+                                          gp = gpar(col = "black", 
+                                                    fontsize = 9)),
+                    xmin = -0.03, xmax = -0.03, ymin = -0.2, ymax = -0.2) +
+  annotation_custom(grob = grid::textGrob(label = "Female", 
+                                          vjust = -0.6,
+                                          gp = gpar(col = "black", 
+                                                    fontsize = 9),
+                                          ),
+                    xmin = -0.03, xmax = -0.03, ymin = 0.2, ymax = 0.2)
+
+print(plot2)
+```
+
+
+```{r plotting_v2, eval=TRUE}
+plot2 <-
+  ggplot() +
+  geom_bar(data = plotdata,
+           mapping = aes(x = age_group,
+                         y = age_group_prop,
+                         fill = datasource
+                         ),
+           width = 0.7,
+           stat = "identity",
+           position = "dodge"
+           ) +
+  scale_fill_manual(name = "source",
+                    values = c("Weibo" = pal[5],
+                               "Population" = pal[2]
+                               )) +
+  geom_hline(yintercept = 0,
+             color = "black",
+             linetype = "dashed") +
+  geom_text(data = plotdata[gender == "Male"],
+            mapping = aes(x = age_group,
+                          y = axis_percent,
+                          label = age_group_prop_percent,
+                          group = datasource
+                          ),
+            position = position_dodge(width = 0.7), 
+            hjust = 1,
+            size = unit(2.5, "pt")
+            ) +
+  geom_text(data = plotdata[gender == "Female"],
+            mapping = aes(x = age_group,
+                          y = axis_percent,
+                          label = age_group_prop_percent,
+                          group = datasource
+                          ),
+            position = position_dodge(width = 0.7), 
+            hjust = 0,
+            size = unit(2.5, "pt")
+            ) +
+  coord_flip(clip = "off") +
+  scale_y_continuous(limits = c(-0.4, 0.4),
+                     breaks = seq(-0.4, 0.4, 0.2),
+                     labels = c("40%", "20%", "0", "20%", "40%"),
+                     expand = c(0.035, 0.035)
+                     ) +
+  scale_x_discrete(labels = c("0-14" = "0-14",
+                              "15-24" = "15-24",
+                              "25-59" = "25-59",
+                              "60-" = "60+")) +
+  labs(x = "Age") +
+  theme_bw() +
+  theme(axis.text = element_text(color = "black"),
+        axis.title.x = element_blank(),
+        # axis.title.y = element_text(size = 12),
+        legend.position = "bottom",
+        legend.title = element_blank(),
+        legend.text = element_text(
+                                   # size = 12,
+                                   margin = margin(r = 0.5,
+                                                   unit = 'cm')),
+        legend.key.size = unit(1, "line"),
+        legend.box.margin = margin(t = 0.3, unit = "cm"),  ### 修改Legend与上方的间距
+        panel.grid = element_blank()) +
+  annotation_custom(grob = linesGrob(arrow = arrow(type = "open",
+                                                   ends = "both",
+                                                   length = unit(1.25 ,"mm")),
+                                     gp = gpar(col = "black",
+                                               lwd = 1.5)),
+                    xmin = -0.07, xmax = -0.07, ymin = -Inf, ymax = 0) +
+  annotation_custom(grob = linesGrob(arrow = arrow(type = "open",
+                                                   ends = "both",
+                                                   length = unit(1.25 ,"mm")),
+                                     gp = gpar(col = "black",
+                                               lwd = 1.5)),
+                    xmin = -0.07, xmax = -0.07, ymin = 0, ymax = Inf) +
+  annotation_custom(grob = grid::textGrob(label = "Male",
+                                          vjust = -0.6,
+                                          gp = gpar(col = "black", 
+                                                    fontsize = 9)),
+                    xmin = -0.08, xmax = -0.08, ymin = -0.2, ymax = -0.2) +
+  annotation_custom(grob = grid::textGrob(label = "Female", 
+                                          vjust = -0.6,
+                                          gp = gpar(col = "black", 
+                                                    fontsize = 9),
+                                          ),
+                    xmin = -0.08, xmax = -0.08, ymin = 0.2, ymax = 0.2)
+
+print(plot2)
+```
+
+```{r save_plot, eval=FALSE}
+time <-
+  str_sub(as.character(now()), start = 1, end = -8) %>%
+  str_replace(" ", "_")
+
+filename_temp <- paste0("02_plot_", time, ".pdf")
+
+ggsave(filename = filename_temp,
+       plot = plot2,
+       path = odir_result,
+       width = 72,
+       height = 105,
+       units = "mm",
+       dpi = 300)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
