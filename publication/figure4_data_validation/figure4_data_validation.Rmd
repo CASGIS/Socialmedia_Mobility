@@ -37,7 +37,7 @@ ifile_checkins <-
   "data/processed/01_checkins.csv.gz"
 
 ifile_city_adm <-
-  "data/raw/figure3_adm_for_join.csv"
+  "data/raw/figure3_adm_for_join_new.csv"
 
 ifile_census_city <-
   "data/raw/figure4_census/result/01_census_city_level.csv"
@@ -913,7 +913,7 @@ plot <-
 ```
 
 
-```{r save_plot, eval=FALSE}
+```{r save_plot, eval=TRUE}
 figure_name <- "figure4.pdf"
 
 ggsave(filename = figure_name,
