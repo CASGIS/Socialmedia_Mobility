@@ -19,7 +19,6 @@ library(ggrepel)
 library(scales)
 library(RColorBrewer)
 library(grid)
-# library(patchwork)
 library(cowplot)
 options(max.print = 100)
 options(datatable.print.topn = 50)
@@ -152,7 +151,7 @@ plot1 <-
 
 ```{r file_path_figure_3b, include=FALSE}
 ifile_userinfo <-
-  "data/processed/04_userinfo_age_gender.csv.gz"
+  "data/processed/04_userinfo.csv.gz"
 ifile_yearbook <-
   "data/raw/figure3_yearbook_2021_age_gender.csv"
 ```

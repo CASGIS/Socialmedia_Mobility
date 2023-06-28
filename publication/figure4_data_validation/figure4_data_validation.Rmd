@@ -19,7 +19,6 @@ library(sf)
 library(janitor)
 library(zoo)
 library(ggtext)
-library(RColorBrewer)
 library(patchwork)
 options(datatable.print.nrows = 5)
 ```
@@ -38,40 +37,893 @@ ifile_checkins <-
   "data/processed/01_checkins.csv.gz"
 
 ifile_city_adm <-
-  "~/Administrative_division/adm_for_join/result/01_adm_for_join.csv"
+  "data/raw/figure3_adm_for_join.csv"
 
 ifile_census_city <-
-  "~/Administrative_division/census_city_pr_level/result/01_census_city_level.csv"
+  "data/raw/figure4_census/result/01_census_city_level.csv"
 
 ifile_city_abnormal <-
-  "data/city_abnormal.csv"
-
-
-odir_data <-
-  "data/"
+  "data/raw/"
 
 odir_plot <-
   "publication/figure4_data_validation/"
 ```
 
 
+```{r input data}
+# Baidu CMI (city movement index)
+# data is available for each city in China from 2020/01/01 to 2020/05/02
+CMI <-
+  fread(ifile_CMI, header = T) %>%
+  setnames("GbCity_EN", "city") %>%
+  melt(id.vars = "city",
+       variable.name = "date",
+       value.name = "CMI") %>%
+  .[, date := ymd(date)] %>%
+  .[, adcode := str_sub(city, start = -6, end = -1)] %>%
+  .[order(adcode, date)]
+
+checkins <-
+  fread(ifile_checkins,
+        select = c(userid = "character",
+                   created_at = "Date",
+                   city = "character",
+                   category_google = "character"))
+
+city_adm <-
+  fread(ifile_city_adm,
+        colClasses = c("character"))
+
+census_city <-
+  fread(ifile_census_city) %>%
+  .[, .(native, pop_2020)]
+```
 
 
+```{r integrate_administrative_divisions_and_census}
+adm_census <-
+  merge(city_adm,
+        census_city,
+        all.x = T,
+        by.x = "ct_name_2",
+        by.y = "native") %>%
+  # the proportion of the city population to the national population
+  .[, pop_2020_prop_na := pop_2020/sum(pop_2020, na.rm = T)] %>%
+  # # the proportion of the city population to the corresponding province population
+  .[, pop_2020_prop_pr := pop_2020/sum(pop_2020, na.rm = T), by = .(pr_name)] %>%
+  .[order(ct_adcode)]
+```
 
 
+# calcualte Weibo CMI
+
+## calculate the daily proportion of users who travel outside for cities
+
+```{r}
+# exlcude these categories of places
+exclude_category <-
+  c("", "Residential", "Others", "Education")
+
+# define the time period
+period_focus <- c(ymd("2020-01-01"):ymd("2020-05-02"))
+period_before_covid <- c(ymd("2020-01-01"):ymd("2020-01-19"))
 
 
+checkins_nonres <-
+  checkins[created_at %in% period_focus] %>%
+  .[!(category_google %in% exclude_category)]
+
+# count the users who travelling outside for cities
+usercount <-
+  checkins_nonres[, .(usercount = uniqueN(userid)), 
+                  by = .(created_at, city)] %>%
+  .[order(city, created_at)]
+```
 
 
+## calculate Weibo CMI and normalize
+
+```{r}
+userprop_nor <-
+  usercount[, userprop_nor := 
+              (usercount-min(usercount))/(max(usercount)-min(usercount)),
+            by = .(city)]
+
+# Note: "Number of users travelling" is directly used here instead of "proportion of users travelling". Considering the need for normalization calculation, the calculation results of the two are consistent.
+```
 
 
+## join population census and administrative data
+
+```{r}
+userprop_nor_pop <-
+  merge(userprop_nor,
+        adm_census,
+        all.x = T,
+        by.x = "city",
+        by.y = "city_join")
+
+# data failed to join
+# userprop_nor_pop[city_pinyin == "", unique(city)]
+```
 
 
+## city level: 7MA (7 days moving average) and compute relative value
+
+```{r}
+userprop_city_nor <-
+  userprop_nor_pop[, .(created_at, 
+                       city, 
+                       city_pinyin, 
+                       userprop_nor_city = userprop_nor)]
+
+userprop_city_nor[order(city, created_at),
+                  userprop_nor_city_7MA := 
+                    rollmean(userprop_nor_city, k = 7, fill = NA),
+                  by = .(city, city_pinyin)]
+
+baseline_raw_city <-
+  userprop_city_nor %>%
+  .[created_at %in% period_before_covid] %>%
+  .[, .(baseline_raw = median(userprop_nor_city, na.rm = T)), by = .(city)]
+
+baseline_7MA_city <-
+  userprop_city_nor %>%
+  .[created_at %in% period_before_covid] %>%
+  .[, .(baseline_7MA = median(userprop_nor_city_7MA, na.rm = T)), by = .(city)]
+
+userprop_city_relative <-
+  merge(userprop_city_nor,
+        baseline_raw_city,
+        all.x = T,
+        by = "city") %>%
+  merge(baseline_7MA_city,
+        all.x = T,
+        by = "city") %>%
+  .[, userprop_relative := userprop_nor_city/baseline_raw-1] %>%
+  .[, userprop_7MA_relative := userprop_nor_city_7MA/baseline_7MA-1]
+```
 
 
+## select cities
+
+```{r}
+# select the abnormal cities
+city_abnor <-
+  userprop_city_relative[userprop_7MA_relative > 2] %>%
+  .[, .(num = .N), by = .(city)]
+
+num_checkins <-
+  checkins_nonres[, .(num_checkins = .N), by = .(city)] %>%
+  .[order(-num_checkins)]
+
+# select cities with sufficient sample size and exclude abnormal cities
+userprop_nor_pop_filter <-
+  userprop_nor_pop %>%
+  .[city %in% num_checkins[num_checkins > 3000, city]] %>%
+  .[!(city %in% city_abnor[, city])]
+
+# the number of selected cities
+# userprop_nor_pop_filter$city %>% uniqueN()
+```
 
 
+## weighted aggregate to provincial and national levels
 
+```{r}
+# provincial level
+userprop_pr_nor <-
+  userprop_nor_pop_filter[, .(userprop_nor_pr = 
+                         sum(userprop_nor*pop_2020_prop_pr, na.rm = T)),
+                   by = .(created_at, pr_join, pr_pinyin)] %>%
+  .[order(pr_join, created_at)]
+
+userprop_pr_nor[1:5]
+
+
+# national level
+userprop_na_nor <-
+  userprop_nor_pop_filter[, .(userprop_nor_na = 
+                         sum(userprop_nor*pop_2020_prop_na, na.rm = T)),
+                   by = .(created_at)] %>%
+  .[order(created_at)]
+
+userprop_na_nor[1:5]
+```
+
+
+## provincial and national level: 7MA and compute relative value
+
+```{r}
+# provincial level
+userprop_pr_nor[order(pr_join, created_at),
+                userprop_nor_pr_7MA := 
+                  rollmean(userprop_nor_pr, k = 7, fill = NA),
+                by = .(pr_join, pr_pinyin)]
+
+baseline_raw_pr <-
+  userprop_pr_nor %>%
+  .[created_at %in% period_before_covid] %>%
+  .[, .(baseline_raw = median(userprop_nor_pr, na.rm = T)), by = .(pr_join)]
+
+baseline_7MA_pr <-
+  userprop_pr_nor %>%
+  .[created_at %in% period_before_covid] %>%
+  .[, .(baseline_7MA = median(userprop_nor_pr_7MA, na.rm = T)), by = .(pr_join)]
+
+userprop_pr_relative <-
+  merge(userprop_pr_nor,
+        baseline_raw_pr,
+        all.x = T,
+        by = "pr_join") %>%
+  merge(baseline_7MA_pr,
+        all.x = T,
+        by = "pr_join") %>%
+  .[, userprop_relative := userprop_nor_pr/baseline_raw-1] %>%
+  .[, userprop_7MA_relative := userprop_nor_pr_7MA/baseline_7MA-1]
+
+# national level
+userprop_na_nor[order(created_at),
+                userprop_nor_na_7MA := 
+                  rollmean(userprop_nor_na, k = 7, fill = NA)]
+
+baseline_raw_na <-
+  userprop_na_nor %>%
+  .[created_at %in% period_before_covid] %>%
+  .[, .(baseline_raw = median(userprop_nor_na, na.rm = T))]
+
+baseline_7MA_na <-
+  userprop_na_nor %>%
+  .[created_at %in% period_before_covid] %>%
+  .[, .(baseline_7MA = median(userprop_nor_na_7MA, na.rm = T))]
+
+userprop_na_relative <-
+  userprop_na_nor[, ':='(baseline_raw = baseline_raw_na$baseline_raw,
+                         baseline_7MA = baseline_7MA_na$baseline_7MA)] %>%
+  .[, userprop_relative := userprop_nor_na/baseline_raw-1] %>%
+  .[, userprop_7MA_relative := userprop_nor_na_7MA/baseline_7MA-1]
+```
+
+
+# calculate Baidu CMI
+
+## normalize the Baidu CMI
+
+```{r}
+CMI_nor <-
+  CMI[, CMI_nor := (CMI-min(CMI))/(max(CMI)-min(CMI)), by = .(city)]
+```
+
+
+## join population census and administrative data
+
+```{r}
+CMI_pop <-
+  merge(CMI_nor,
+        adm_census,
+        all.x = T,
+        by.x = "adcode",
+        by.y = "adcode_CMI_join")
+
+# cities failed to join population census
+# CMI_pop[is.na(pop_2020), unique(ct_name_2)]
+```
+
+
+## weighted aggregate to provincial and national level
+
+```{r}
+# provincial level
+CMI_pr_nor <-
+  CMI_pop[, .(CMI_nor_pr = sum(CMI_nor*pop_2020_prop_pr, na.rm = T)), 
+          by = .(date, pr_join, pr_pinyin)]
+
+# national level
+CMI_na_nor <-
+  CMI_pop[, .(CMI_nor_na = sum(CMI_nor*pop_2020_prop_na, na.rm = T)), 
+          by = .(date)]
+```
+
+
+## provincial and national level: 7MA and compute relative value
+
+```{r}
+# province level
+CMI_pr_nor[order(pr_join, date), 
+           CMI_nor_pr_7MA := rollmean(CMI_nor_pr, k = 7, fill = NA), 
+           by = .(pr_join)]
+
+baseline_raw_CMI_pr <-
+  CMI_pr_nor[date %in% period_before_covid] %>%
+  .[, .(baseline_raw = median(CMI_nor_pr, na.rm = T)), by = .(pr_join)]
+
+baseline_7MA_CMI_pr <-
+  CMI_pr_nor[date %in% period_before_covid] %>%
+  .[, .(baseline_7MA = median(CMI_nor_pr_7MA, na.rm = T)), by = .(pr_join)]
+
+CMI_pr_nor_relative <- 
+  merge(CMI_pr_nor,
+        baseline_raw_CMI_pr,
+        all.x = T,
+        by = "pr_join") %>%
+  merge(baseline_7MA_CMI_pr,
+        all.x = T,
+        by = "pr_join") %>%
+  .[, CMI_relative := CMI_nor_pr/baseline_raw-1] %>%
+  .[, CMI_7MA_relative := CMI_nor_pr_7MA/baseline_7MA-1]
+
+# national level
+CMI_na_nor[order(date),
+           CMI_nor_na_7MA := rollmean(CMI_nor_na, k = 7, fill = NA)]
+
+baseline_raw_CMI_na <-
+  CMI_na_nor[date %in% period_before_covid] %>%
+  .[, .(baseline_raw = median(CMI_nor_na, na.rm = T))]
+
+baseline_7MA_CMI_na <-
+  CMI_na_nor[date %in% period_before_covid] %>%
+  .[, .(baseline_7MA = median(CMI_nor_na_7MA, na.rm = T))]
+
+CMI_na_nor_relative <- 
+  CMI_na_nor[, ':='(baseline_raw = baseline_raw_CMI_na$baseline_raw,
+                    baseline_7MA = baseline_7MA_CMI_na$baseline_7MA)] %>%
+  .[, CMI_relative := CMI_nor_na/baseline_raw-1] %>%
+  .[, CMI_7MA_relative := CMI_nor_na_7MA/baseline_7MA-1]
+```
+
+
+# Pearson analysis between Weibo CMI and Baidu CMI
+
+```{r calculate_signifiant_level}
+cal_sign <- function(i) {
+  if(i < 1e-3){
+    return("***")
+  } else if(i < 1e-2){
+    return("**")
+  } else if(i < 5e-2){
+    return("*") 
+  } else {
+    return("")
+  }
+}
+```
+
+
+```{r}
+# provincial level
+CMI_weibo_pr <-
+  merge(CMI_pr_nor_relative[, .(pr_join,
+                                pr_pinyin,
+                                date,
+                                CMI_relative,
+                                CMI_7MA_relative)], 
+        userprop_pr_relative[, .(pr_join,
+                                 created_at,
+                                 userprop_relative,
+                                 userprop_7MA_relative)], 
+        by.x = c("pr_join", "date"),
+        by.y = c("pr_join", "created_at"))
+
+cor_result_pr <-
+  CMI_weibo_pr[, .(pr_join, pr_pinyin)] %>%
+  unique() %>%
+  .[, ':='(cor_value = NA_real_, p_value = NA_real_)]
+
+for(i in 1:nrow(cor_result_pr)){
+
+  pr_analysis <- cor_result_pr[i, pr_join]
+  
+  pearson_test <-
+    cor.test(CMI_weibo_pr[pr_join == pr_analysis, CMI_7MA_relative],
+             CMI_weibo_pr[pr_join == pr_analysis, userprop_7MA_relative],
+             method = "pearson")
+  
+  cor_result_pr[i, "cor_value"] <- pearson_test$estimate
+  cor_result_pr[i, "p_value"] <- pearson_test$p.value
+}
+
+# add label
+cor_result_pr %>%
+  .[, cor_value_round := round(cor_value, digits = 2)] %>%
+  .[, sign_level := NA_character_]
+
+for(i in 1:nrow(cor_result_pr)){
+  cor_result_pr[i, sign_level := cal_sign(p_value)]
+}
+
+cor_result_pr[, label := paste0("*r*", " = ", 
+                                str_pad(cor_value_round,
+                                        width = 4,
+                                        side = "right",
+                                        pad = "0"),
+                                "<sup>", sign_level, "</sup>")]
+
+
+# national level
+CMI_weibo_na <-
+  merge(CMI_na_nor_relative[, .(date, 
+                                CMI_relative,
+                                CMI_7MA_relative)], 
+        userprop_na_relative[, .(created_at,
+                                 userprop_relative,
+                                 userprop_7MA_relative)], 
+        by.x = c("date"),
+        by.y = c("created_at"))
+
+cor_result_na <-
+  data.table(cor_value = NA_real_, p_value = NA_real_)
+  
+cor_result_na[, "cor_value"] <- pearson_test$estimate
+cor_result_na[, "p_value"] <- pearson_test$p.value
+
+cor_result_na %>%
+  .[, cor_value_round := round(cor_value, digits = 2)] %>%
+  .[, sign_level := NA_character_]
+
+for(i in 1:nrow(cor_result_na)){
+  cor_result_na[i, sign_level := cal_sign(p_value)]
+}
+
+cor_result_na[, label := paste0("*r*", " = ", cor_value_round, "<sup>",
+                                sign_level, "</sup>")]
+```
+
+
+# users correction
+
+```{r file_path_users_correction}
+ifile_pop_structure_yearbook <-
+  "data/raw/figure4_yearbook_2021_city_level_age_gender/population_structure_yearbook2021.csv"
+
+ifile_userinfo <-
+  "data/processed/04_userinfo.csv.gz"
+```
+
+
+```{r input_data}
+pop_yearbook_structure <-
+  fread(ifile_pop_structure_yearbook)
+
+userinfo <-
+  fread(ifile_userinfo) %>%
+  .[!is.na(gender) & !is.na(age)] %>%
+  .[, .(userid, age, gender, location)]
+```
+
+
+```{r data_preprocess}
+exclude_location <-
+  c("海外", "其他", "香港", "澳门", "台湾", "")
+
+userinfo <-
+  userinfo %>%
+  .[, age_group := fcase(age >= 0 & age <= 14, "pop_0_14",
+                         age >= 15 & age <= 64, "pop_15_64",
+                         age >= 65 & age <= 90, "pop_65_above",
+                         default = NA)] %>% 
+  .[!is.na(age_group)] %>%
+  .[str_detect(location, " "), located_pr := str_split_i(location, " ", 1)] %>%
+  .[!str_detect(location, " "), located_pr := location] %>%
+  .[!(located_pr %in% exclude_location)]
+```
+
+
+## calculate the users correction factor
+
+```{r}
+# yearbook
+pop_yearbook_prop <-
+  pop_yearbook_structure[, pop_nation := sum(pop_region, na.rm = T)] %>%
+  .[, ':='(pop_0_14_prop = pop_0_14/pop_nation,
+           pop_15_64_prop = pop_15_64/pop_nation,
+           pop_65_above_prop = pop_65_above/pop_nation)]
+
+pop_yearbook_prop_melt <-
+  melt(pop_yearbook_prop[, .(region_cn, pop_0_14_prop, pop_15_64_prop, pop_65_above_prop)],
+       id.vars = "region_cn") %>%
+  .[, variable := str_replace(variable, "_prop", "")] %>%
+  setnames(old = c("region_cn", "variable", "value"),
+           new = c("pr", "age_group", "pop_yearbook_prop"))
+
+# Weibo user
+pop_sample_prop <-
+  userinfo %>%
+  .[, .(pop_sample = .N), by = .(located_pr, age_group)] %>%
+  .[, pop_sample_prop := pop_sample/sum(pop_sample, na.rm = T)]
+
+# calculate proportion difference between Weibo users and yearbook statistics
+pop_prop_merge <-
+  merge(pop_sample_prop[, .(pr = located_pr, age_group, pop_sample_prop)],
+        pop_yearbook_prop_melt,
+        by = c("pr", "age_group")) %>%
+  .[, pop_prop_rec := sqrt(pop_yearbook_prop/pop_sample_prop)]
+```
+
+
+## correct users
+
+```{r}
+checkins_nonres_userinfo_adm <-
+  merge(checkins_nonres,
+        userinfo[, .(userid = as.character(userid), age_group)],
+        all.x = T,
+        by = "userid") %>%
+  .[!is.na(age_group)] %>%
+  merge(city_adm[, .(city_join, pr_blog = pr_join, pr_pinyin)],
+        all.x = T,
+        by.x = "city",
+        by.y = "city_join") %>%
+  .[!is.na(pr_blog)] %>%
+  .[city %in% num_checkins[num_checkins > 3000, city]] %>%
+  .[!(city %in% city_abnor[, city])]
+
+usercount_popgroup <-
+  checkins_nonres_userinfo_adm[, .(usercount = uniqueN(userid)), 
+                              by = .(created_at, age_group, pr_blog, pr_pinyin)]
+
+usercount_popgroup_rec <-
+  merge(usercount_popgroup,
+        pop_prop_merge[, .(pr, age_group, pop_prop_rec)],
+        all.x = T,
+        by.x = c("age_group", "pr_blog"),
+        by.y = c("age_group", "pr")) %>%
+  .[, usercount_rec_pop := usercount*pop_prop_rec] %>%
+  .[, .(usercount_rec = sum(usercount_rec_pop, na.rm = T)), 
+    by = .(pr_blog, pr_pinyin, created_at)] %>%
+  .[order(pr_blog, created_at)]
+
+
+# province level
+usercount_pr_rec <-
+  usercount_popgroup_rec
+
+# national level
+usercount_na_rec <-
+  usercount_popgroup_rec[, .(usercount_rec = sum(usercount_rec)), 
+                         by = .(created_at)]
+```
+
+
+## 7MA and compute relative value
+
+```{r}
+# provincial level
+userprop_pr_rec_nor <-
+  usercount_pr_rec[, userprop_rec_nor := 
+                           (usercount_rec-min(usercount_rec))/
+                           (max(usercount_rec)-min(usercount_rec)),
+                         by = .(pr_blog, pr_pinyin)]
+
+userprop_pr_rec_nor[order(pr_blog, created_at),
+                    userprop_rec_nor_7MA :=
+                      rollmean(userprop_rec_nor, k = 7, fill = NA),
+                    by = .(pr_blog, pr_pinyin)]
+
+baseline_raw_rec_pr <-
+  userprop_pr_rec_nor %>%
+  .[created_at %in% period_before_covid] %>%
+  .[, .(baseline_raw = median(userprop_rec_nor, na.rm = T)), by = .(pr_blog)]
+
+baseline_7MA_rec_pr <-
+  userprop_pr_rec_nor %>%
+  .[created_at %in% period_before_covid] %>%
+  .[, .(baseline_7MA = median(userprop_rec_nor_7MA, na.rm = T)), by = .(pr_blog)]
+
+userprop_rec_pr_relative <-
+  merge(userprop_pr_rec_nor,
+        baseline_raw_rec_pr,
+        all.x = T,
+        by = "pr_blog") %>%
+  merge(baseline_7MA_rec_pr,
+        all.x = T,
+        by = "pr_blog") %>%
+  .[, userprop_relative := userprop_rec_nor/baseline_raw-1] %>%
+  .[, userprop_7MA_relative := userprop_rec_nor_7MA/baseline_7MA-1]
+
+# national level
+userprop_na_rec_nor <-
+  usercount_na_rec[, userprop_rec_nor := 
+                     (usercount_rec-min(usercount_rec))/
+                           (max(usercount_rec)-min(usercount_rec))]
+
+userprop_na_rec_nor[order(created_at),
+                    userprop_rec_nor_7MA :=
+                      rollmean(userprop_rec_nor, k = 7, fill = NA)]
+
+baseline_raw_rec_na <-
+  userprop_na_rec_nor %>%
+  .[created_at %in% period_before_covid] %>%
+  .[, .(baseline_raw = median(userprop_rec_nor, na.rm = T))]
+
+baseline_7MA_rec_na <-
+  userprop_na_rec_nor %>%
+  .[created_at %in% period_before_covid] %>%
+  .[, .(baseline_7MA = median(userprop_rec_nor_7MA, na.rm = T))]
+
+userprop_rec_na_relative <-
+  userprop_na_rec_nor[, ':='(baseline_raw = baseline_raw_rec_na$baseline_raw,
+                             baseline_7MA = baseline_7MA_rec_na$baseline_7MA)] %>%
+  .[, userprop_relative := userprop_rec_nor/baseline_raw-1] %>%
+  .[, userprop_7MA_relative := userprop_rec_nor_7MA/baseline_7MA-1]
+```
+
+
+# Pearson analysis bwtween corrected Weibo CMI and Baidu CMI
+
+```{r}
+# provincial level
+CMI_weibo_rec_pr <-
+  merge(CMI_pr_nor_relative[, .(pr_join,
+                                pr_pinyin,
+                                date,
+                                CMI_relative,
+                                CMI_7MA_relative)], 
+        userprop_rec_pr_relative[, .(pr_blog,
+                                     created_at,
+                                     userprop_relative,
+                                     userprop_7MA_relative)], 
+        by.x = c("pr_join", "date"),
+        by.y = c("pr_blog", "created_at"))
+
+cor_result_rec_pr <-
+  CMI_weibo_rec_pr[, .(pr_join, pr_pinyin)] %>%
+  unique() %>%
+  .[, ':='(cor_value = NA_real_, p_value = NA_real_)]
+
+for(i in 1:nrow(cor_result_rec_pr)){
+
+  pr_analysis <- cor_result_rec_pr[i, pr_join]
+  
+  pearson_test <-
+    cor.test(CMI_weibo_rec_pr[pr_join == pr_analysis, CMI_7MA_relative],
+             CMI_weibo_rec_pr[pr_join == pr_analysis, userprop_7MA_relative],
+             method = "pearson")
+  
+  cor_result_rec_pr[i, "cor_value"] <- pearson_test$estimate
+  cor_result_rec_pr[i, "p_value"] <- pearson_test$p.value
+}
+
+cor_result_rec_pr %>%
+  .[, cor_value_round := round(cor_value, digits = 2)] %>%
+  .[, sign_level := NA_character_]
+
+for(i in 1:nrow(cor_result_rec_pr)){
+  cor_result_rec_pr[i, sign_level := cal_sign(p_value)]
+}
+
+cor_result_rec_pr[, label := paste0("*r*",
+                                    "<sub>c</sub>", 
+                                    " = ", 
+                                    str_pad(cor_value_round, 
+                                            width = 4, 
+                                            side = "right",
+                                            pad = "0"), 
+                                    "<sup>", sign_level, "</sup>")]
+
+# national level
+CMI_weibo_rec_na <-
+  merge(CMI_na_nor_relative[, .(date, 
+                                CMI_relative,
+                                CMI_7MA_relative)], 
+        userprop_rec_na_relative[, .(created_at,
+                                     userprop_relative,
+                                     userprop_7MA_relative)], 
+        by.x = c("date"),
+        by.y = c("created_at"))
+
+cor_result_rec_na <-
+  data.table(cor_value = NA_real_, p_value = NA_real_)
+  
+cor_result_rec_na[, "cor_value"] <- pearson_test$estimate
+cor_result_rec_na[, "p_value"] <- pearson_test$p.value
+
+cor_result_rec_na %>%
+  .[, cor_value_round := round(cor_value, digits = 2)] %>%
+  .[, sign_level := NA_character_]
+
+for(i in 1:nrow(cor_result_rec_na)){
+  cor_result_rec_na[i, sign_level := cal_sign(p_value)]
+}
+
+cor_result_rec_na[, label := paste0("*r*", "<sub>c</sub>", 
+                              " = ", cor_value_round, "<sup>",
+                              sign_level, "</sup>")]
+```
+
+
+# plot the Pearson analysis result
+
+## prepare plotdata
+
+```{r}
+# provincial level
+CMI_baidu_nonrec_rec_pr <-
+  merge(CMI_weibo_rec_pr %>%
+          setnames(old = c("userprop_relative",
+                           "userprop_7MA_relative"),
+                   new = c("userprop_rec_relative",
+                           "userprop_rec_7MA_relative"),
+                   skip_absent = T),
+        CMI_weibo_pr[, !c("CMI_relative", "CMI_7MA_relative")],
+        all.x = T,
+        by = c("pr_join", "date", "pr_pinyin")) %>%
+  .[!is.na(CMI_relative) & 
+      !is.na(CMI_7MA_relative) &
+      !is.na(userprop_relative) &
+      !is.na(userprop_7MA_relative) &
+      !is.na(userprop_rec_relative) &
+      !is.na(userprop_rec_7MA_relative)] %>%
+  .[pr_join %in% cor_result_rec_pr[, pr_join]] %>%
+  melt(id.vars = c("pr_join", "pr_pinyin", "date")) %>%
+  .[, variable := factor(variable,
+                         levels = c("CMI_relative",
+                                    "CMI_7MA_relative",
+                                    "userprop_relative",
+                                    "userprop_7MA_relative",
+                                    "userprop_rec_relative",
+                                    "userprop_rec_7MA_relative"))]
+
+cor_result_nonrec_rec_pr <-
+  merge(cor_result_rec_pr[, .(pr_pinyin, label_rec = label)],
+        cor_result_pr[, .(pr_pinyin, label_raw = label)],
+        all.x = T, 
+        by = "pr_pinyin")
+
+# national level
+CMI_baidu_nonrec_rec_na <-
+  merge(CMI_weibo_rec_na %>%
+          setnames(old = c("userprop_relative",
+                           "userprop_7MA_relative"),
+                   new = c("userprop_rec_relative",
+                           "userprop_rec_7MA_relative"),
+                   skip_absent = T),
+        CMI_weibo_na[, !c("CMI_relative", "CMI_7MA_relative")],
+        all.x = T,
+        by = c("date")) %>%
+  .[!is.na(CMI_relative) & 
+      !is.na(CMI_7MA_relative) &
+      !is.na(userprop_relative) &
+      !is.na(userprop_7MA_relative) &
+      !is.na(userprop_rec_relative) &
+      !is.na(userprop_rec_7MA_relative)] %>%
+  melt(id.vars = c("date")) %>%
+  .[, variable := factor(variable,
+                         levels = c("CMI_relative",
+                                    "CMI_7MA_relative",
+                                    "userprop_relative",
+                                    "userprop_7MA_relative",
+                                    "userprop_rec_relative",
+                                    "userprop_rec_7MA_relative"))]
+
+cor_result_nonrec_rec_na <-
+  cbind(cor_result_rec_na[, .(label_rec = label)],
+        cor_result_na[, .(label_raw = label)])
+
+# plotdata
+CMI_baidu_nonrec_rec <-
+  rbind(CMI_baidu_nonrec_rec_pr,
+        CMI_baidu_nonrec_rec_na[, ':='(pr_join = "全国", pr_pinyin = "Nation")])
+
+pr_pinyin_order <-
+  CMI_baidu_nonrec_rec$pr_pinyin[CMI_baidu_nonrec_rec$pr_pinyin != "Nation"] %>%
+  unique() %>%
+  sort()
+
+CMI_baidu_nonrec_rec$pr_pinyin <-
+  factor(CMI_baidu_nonrec_rec$pr_pinyin, levels = c("Nation", pr_pinyin_order))
+
+
+cor_result_nonrec_rec <-
+  rbind(cor_result_nonrec_rec_pr,
+        cor_result_nonrec_rec_na[, ':='(pr_pinyin = "Nation")])
+
+cor_result_nonrec_rec$pr_pinyin <-
+  factor(cor_result_nonrec_rec$pr_pinyin, levels = c("Nation", pr_pinyin_order))
+```
+
+
+## plot the esult
+
+```{r}
+plot <-
+  ggplot(CMI_baidu_nonrec_rec) +
+  geom_line(mapping = aes(x = date, 
+                          y = value, 
+                          color = variable,
+                          linewidth = variable)) +
+  geom_richtext(data = cor_result_nonrec_rec,
+                mapping = aes(x = ymd("2020-05-10"),
+                              y = 0.8,
+                              label = label_raw),
+                size = 2.5,
+                lineheight = 1,
+                hjust = "inward",
+                fill = NA,
+                label.color = NA) +
+  geom_richtext(data = cor_result_nonrec_rec,
+                mapping = aes(x = ymd("2020-05-10"),
+                              y = 0.4,
+                              label = label_rec),
+                size = 2.5,
+                lineheight = 1,
+                hjust = "inward",
+                fill = NA,
+                label.color = NA) +
+  geom_hline(yintercept = 0,
+             color = "black",
+             linetype = "solid",
+             # size = 0.5,
+             alpha = 0.5) +
+  geom_vline(xintercept = ymd("2020-01-20"),
+             color = "red",
+             linetype = "dashed",
+             linewidth = 0.3) +
+  scale_color_manual(
+    values = c("CMI_relative" = color_secondary[6],
+               "CMI_7MA_relative" = color_primary[6],
+               "userprop_relative" = color_secondary[4],
+               "userprop_7MA_relative" = color_primary[4],
+               "userprop_rec_relative" = color_secondary[2],
+               "userprop_rec_7MA_relative" = color_primary[2]), 
+    labels = c(
+      "CMI_relative" = "Baidu indice",
+      "CMI_7MA_relative" = "Baidu indice (7MA)",
+      "userprop_relative" = "Weibo indice",
+      "userprop_7MA_relative" = "Weibo indice (7MA)",
+      "userprop_rec_relative" = "Weibo indice (corrected)",
+      "userprop_rec_7MA_relative" = "Weibo indice (corrected, 7MA)")
+    ) +
+  scale_linewidth_manual(
+    values = c("CMI_relative" = 0.1,
+               "CMI_7MA_relative" = 0.35,
+               "userprop_relative" = 0.1,
+               "userprop_7MA_relative" = 0.35,
+               "userprop_rec_relative" = 0.1,
+               "userprop_rec_7MA_relative" = 0.35)
+  ) +
+  scale_x_date(breaks = ymd(c("2020-01-01",
+                              "2020-02-01",
+                              "2020-03-03",
+                              "2020-04-01",
+                              "2020-05-01")),
+               date_labels = "%b") +
+  scale_y_continuous(breaks = seq(-1, 1, 0.5),
+                     limits = c(-1, 1),
+                     labels = c("-100%", "-50%", "0", "+50%", "+100%")) +
+  facet_wrap(~ pr_pinyin, ncol = 6) +
+  labs(y = "Percentage change of City Movement Intensity index") +
+  theme_bw() +
+  theme(
+    axis.title.x = element_blank(),
+    axis.text = element_text(size = 7),
+    legend.title = element_blank(),
+    legend.position = "bottom",
+    legend.margin = margin(t = -70, r = -140, b = 10),
+    legend.text = element_text(size = 9),
+    legend.spacing.x = unit(0.3, 'cm'),
+    legend.key.width = unit(1.0, "cm"),
+    strip.background = element_rect(fill = NA, color = NA),
+    strip.text = element_text(margin = margin(t = 0, b = 3), size = 8),
+    panel.grid.major = element_blank(),
+    panel.grid.minor = element_blank(),
+    panel.spacing.x = unit(12, "pt")
+    ) +
+  guides(colour = guide_legend(nrow = 3, override.aes = list(linewidth = 1)),
+         linewidth = guide_none())
+```
+
+
+```{r save_plot, eval=FALSE}
+figure_name <- "figure4.pdf"
+
+ggsave(filename = figure_name,
+       plot = plot,
+       path = odir_plot,
+       width = 180,
+       height = 150,
+       units = "mm",
+       dpi = 300)
+```
 
 
 
