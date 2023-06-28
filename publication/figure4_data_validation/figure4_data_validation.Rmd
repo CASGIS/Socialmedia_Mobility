@@ -1,0 +1,80 @@
+---
+title: "figure4_data_validation"
+author: "Kaixin"
+date: "2023-06-28"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "~/Socialmedia_Mobility/")
+```
+
+
+```{r initial, include=FALSE}
+library(tidyverse)
+library(lubridate)
+library(data.table)
+library(sf)
+library(janitor)
+library(zoo)
+library(ggtext)
+library(RColorBrewer)
+library(patchwork)
+options(datatable.print.nrows = 5)
+```
+
+
+```{r color_preset}
+source("publication/color_setting.R")
+```
+
+
+```{r file_path}
+ifile_CMI <- 
+  "data/raw/figure4_Baidu_Qianxi_data/City_Movement_Intensity_202001-202004.csv"
+
+ifile_checkins <-
+  "data/processed/01_checkins.csv.gz"
+
+ifile_city_adm <-
+  "~/Administrative_division/adm_for_join/result/01_adm_for_join.csv"
+
+ifile_census_city <-
+  "~/Administrative_division/census_city_pr_level/result/01_census_city_level.csv"
+
+ifile_city_abnormal <-
+  "data/city_abnormal.csv"
+
+
+odir_data <-
+  "data/"
+
+odir_plot <-
+  "publication/figure4_data_validation/"
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
