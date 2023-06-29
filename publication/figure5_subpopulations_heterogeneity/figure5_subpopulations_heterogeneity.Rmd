@@ -1,0 +1,205 @@
+---
+title: "figure5_subpopulations_heterogeneity"
+author: "Kaixin"
+date: "2023-06-28"
+output: html_document
+---
+
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "~/Socialmedia_Mobility/")
+```
+
+
+```{r initial, include=FALSE}
+library(tidyverse)
+library(data.table)
+library(lubridate)
+library(ggdist)
+library(scales)
+library(cowplot)
+library(patchwork)
+
+odir_plot <-
+  "publication/figure5_subpopulations_heterogeneity/"
+```
+
+
+```{r preset_colors}
+source("publication/color_setting.R")
+```
+
+
+```{r file_path}
+ifile_plotdata <-
+  "data/processed/06_plotdata_figure5.csv"
+```
+
+
+```{r input_data}
+plotdata <- fread(ifile_plotdata)
+```
+
+
+```{r data_preprocess}
+plotdata[, subgroup := factor(subgroup,
+                              levels = c("Male",
+                                         "Female",
+                                         "18-22",
+                                         "23-25",
+                                         "26-30",
+                                         "31-35",
+                                         "36-40",
+                                         "High school",
+                                         "Bachelor or higher",
+                                         "Single",
+                                         "Married"))] %>%
+  .[, category_google := factor(category_google,
+                                levels = c("Residential",
+                                           "Non-residential"))]
+```
+
+
+```{r plot_figure_5}
+Barplot_dodge <- function(data, color_primary, color_secondary, barwidth, dodgewidth){
+  p <-
+    ggplot(data = data) +
+    geom_col(mapping = aes(x = subgroup,
+                           y = q2,
+                           linetype = category_google),
+             color = color_primary,
+             width = barwidth,
+             position = position_dodge(width = dodgewidth),
+             fill = color_secondary,
+             alpha = 0.06
+             ) +
+    stat_pointinterval(mapping = aes(x = subgroup,
+                                     y = visits_change,
+                                     group = category_google),
+                       position = position_dodge(width = dodgewidth),
+                       color = color_primary,
+                       shape = 21,
+                       point_fill = "white",
+                       point_size = 1.5,
+                       point_interval = "median_qi",
+                       .width = c(0.66, 0.95)) +
+    scale_linetype_manual(values = c("Residential" = "solid",
+                                     "Non-residential" = "dashed")) +
+    geom_hline(yintercept = 0, 
+               colour = "grey50") +
+    scale_y_continuous(limits = c(-1, 1),
+                       breaks = seq(-1, 1, 0.5),
+                       labels = c("-100%", "-50%", "0", "+50%", "+100%")) +
+    scale_x_discrete(expand = c(0, 0)) +
+    coord_cartesian(clip = "off") +
+    labs(x = data$subname) +
+    theme_classic() +
+    theme(axis.title.y = element_blank(),
+          legend.position = "none")
+  
+  return(p)
+}
+
+
+# plot
+p_gender <-
+  Barplot_dodge(plotdata[subname == "Gender"], 
+                color_primary = color_primary[2], 
+                color_secondary = color_secondary[2],
+                barwidth = 0.55,
+                dodgewidth = 0.55)
+
+p_age <-
+  Barplot_dodge(plotdata[subname == "Age"],
+                color_primary = color_primary[6], 
+                color_secondary = color_secondary[6],
+                barwidth = 0.5,
+                dodgewidth = 0.5) +
+  theme(axis.line.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank())
+
+p_education <-
+  Barplot_dodge(plotdata[subname == "Education"], 
+                color_primary = color_primary[4],
+                color_secondary = color_secondary[4],
+                barwidth = 0.35,
+                dodgewidth = 0.35)
+
+p_relationship <-
+  Barplot_dodge(plotdata[subname == "Marital status"], 
+                color_primary = color_primary[5],
+                color_secondary = color_secondary[5],
+                barwidth = 0.35,
+                dodgewidth = 0.35) +
+  theme(axis.line.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.position = "right",
+        legend.title = element_blank(),
+        legend.spacing.y = unit(5, "mm"),
+        legend.margin = margin(r = -5)) +
+  guides(linetype = guide_legend(byrow = TRUE, color = "black"))
+
+
+# merge plot
+plot_top <-
+  plot_grid(p_gender, p_age,
+            # labels = c("a", "b", "c", "d"),
+            nrow = 1,
+            rel_widths = c(2.3, 5))
+
+plot_bottom <-
+  plot_grid(p_education, p_relationship,
+            nrow = 1,
+            rel_widths = c(2.2, 2.9))
+
+plot_merge <-
+  plot_grid(plot_top, plot_bottom,
+            nrow = 2, align = "h", axis = "b",
+            rel_heights = c(1, 1))
+
+# add the title
+ylab_text <- "Percentage change in number of visits"
+ylab <-
+  ggplot(data.frame(ylab = ylab_text, x = 1, y = 1)) +
+  geom_text(aes(x, y, label = ylab),
+            angle = 90,
+            size = 5) +
+  theme_void() +
+  coord_cartesian(clip = "off")
+
+
+plot_result <-
+  ylab + plot_merge +
+  plot_layout(widths = c(1, 30))
+
+print(plot_result)
+```
+
+
+```{r save_plot, eval=FALSE}
+figure_name <- "figure5.pdf"
+
+ggsave(plot = plot_result,
+       filename = figure_name,
+       path = odir_plot,
+       width = 180,
+       height = 130,
+       units = "mm",
+       dpi = 300)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
