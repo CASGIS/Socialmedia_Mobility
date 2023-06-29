@@ -1,0 +1,279 @@
+---
+title: "figure7_mobility_distance"
+author: "Kaixin"
+date: "2023-06-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "~/Socialmedia_Mobility/")
+```
+
+
+```{r initial, include=FALSE}
+library(tidyverse)
+library(data.table)
+library(lubridate)
+library(spatialrisk)
+library(ggdist)
+library(scales)
+library(lemon)
+options(max.print = 100)
+
+odir_plot <- "publication/figure7_mobility_distance/"
+```
+
+
+```{r preset_color}
+source("publication/color_setting.R")
+```
+
+
+```{r file_path, include=FALSE}
+ifile_checkins <-
+  "data/processed/01_checkins.csv.gz"
+ifile_pois_all <-
+  "/sdc/Weibo/footprint_16M/data/05a_poi_merge/pois_20200531.Rds"
+```
+
+
+```{r input_data}
+checkins <-
+  fread(ifile_checkins,
+        select = c("containerid" = "character",
+                   "userid" = "character",
+                   "created_at" = "Date",
+                   "city" = "character",
+                   "category_google" = "character"))
+
+pois_all <-
+  readRDS(ifile_pois_all) %>%
+  as.data.table() %>%
+  .[, .(poiid, lon, lat)] %>%
+  .[!(is.na(lon)|is.na(lat))] %>%
+  # filter POIs within China
+  .[lon > 73 & lon < 136 & lat > 3 & lat < 54]
+```
+
+
+```{r identify_home_location_for_users}
+home_identity <-
+  checkins[category_google == "Residential", 
+          .(checkin_num = .N), 
+          by = .(userid, containerid, city)] %>%
+  .[order(userid, -checkin_num)] %>%
+  .[checkin_num >= 3] %>% 
+  .[, .SD[1], by = .(userid)] %>%
+  setnames(old = c("city", "containerid"),
+           new = c("city_located", "res_origin"))
+```
+
+
+```{r connect_longitude_and_latitude}
+home_identity_lonlat <-
+  home_identity %>%
+  merge(pois_all,
+        all.x = T,
+        by.x = "res_origin",
+        by.y = "poiid") %>%
+  .[!(is.na(lon)|is.na(lat))] %>%
+  setnames(c("lon", "lat"), c("lon_origin", "lat_origin"))
+
+checkins_lonlat <-
+  checkins %>%
+  setnames("containerid", "poiid_des") %>%
+  merge(pois_all,
+        all.x = T,
+        by.x = "poiid_des",
+        by.y = "poiid") %>%
+  .[!(is.na(lon)|is.na(lat))] %>%
+  setnames(c("lon", "lat", "city"), c("lon_des", "lat_des", "city_des"))
+```
+
+
+```{r calculate_distance}
+checkins_home_distance <-
+  merge(checkins_lonlat,
+        home_identity_lonlat,
+        all.x = T,
+        by = "userid") %>%
+  .[!is.na(res_origin)] %>%
+  # Haversine distance
+  .[, dist := spatialrisk::haversine(lat_origin, lon_origin, lat_des, lon_des)]
+
+checkins_dist <-
+  checkins_home_distance %>%
+  .[city_located == city_des] %>%
+  .[, dist_km := dist/1000] %>%
+  # post check-ins at home is not travelling
+  .[dist_km > 0]  
+```
+
+
+```{r define_time_period}
+period_before <-
+  c(ymd("2019-07-01"):ymd("2019-12-31"))
+period_after <-
+  c(ymd("2020-01-20"):ymd("2020-02-28"))
+```
+
+
+```{r travel_distance_in_two_periods}
+travel_distance <-
+  checkins_dist[, .(dist_km = median(dist_km, na.rm = T)), 
+                by = .(created_at, userid, category_google)]
+
+travel_dist_before <-
+  travel_distance[created_at %in% period_before] %>%
+  .[, .(dist_km_before = median(dist_km, na.rm = T)), 
+    by = .(userid, category_google)]
+
+travel_dist_after <-
+  travel_distance[created_at %in% period_after] %>%
+  .[, .(dist_km_after = median(dist_km, na.rm = T)),
+    by = .(userid, category_google)]
+
+travel_dist_merge <-
+  merge(travel_dist_before,
+        travel_dist_after,
+        by = c("userid", "category_google")) %>%
+  melt(id.vars = c("userid", "category_google"),
+       measure.vars = c("dist_km_before", "dist_km_after"),
+       variable.name = "period",
+       value.name = "dist_km") %>%
+  .[, period := str_replace(period, "dist_km_", "")]
+
+summary(travel_dist_merge)
+```
+
+
+```{r plot_figure_7}
+breaks_x_axis <- c(0:6)
+xlim_axis <- c(0, 6)
+
+category_exclude <-
+  c("Education", "Others", "")
+
+plotdata1 <-
+  travel_dist_merge[!(category_google %in% category_exclude)] %>%
+  .[, dist_km_log2 := log(dist_km + 1, base = 2)] %>%
+  .[, category_google := factor(category_google,
+                                    levels = c("Residential",
+                                               "Workplaces",
+                                               "Retail & recreation",
+                                               "Parks",
+                                               "Transit stations",
+                                               "Grocery & pharmacy"))] %>%
+  .[, period := factor(period, levels = c("before", "after"))]
+
+
+xmin_rect <- c(0.5, 1.5, 3, 15)
+
+xmax_rect <- c(1.5, 3, 15, 100)
+
+rectdata <-
+  data.frame(
+    xmin = log(xmin_rect, base = 2),
+    xmax = log(xmax_rect, base = 2),
+    distance = factor(
+      c("Walkable",
+        "Nearby",
+        "Far",
+        "Distant"),
+      levels = c("Walkable",
+                 "Nearby",
+                 "Far",
+                 "Distant")
+    )
+  )
+
+color_alpha <-
+  scales::alpha(color_secondary, alpha = 0.5)
+
+plot1 <-
+  ggplot() +
+  geom_rect(data = rectdata,
+            mapping = aes(xmin = xmin,
+                          xmax = xmax,
+                          fill = distance),
+            linewidth = 0,
+            ymin = -Inf,
+            ymax = Inf) +
+  scale_fill_manual(name = "Distance",
+                    values = c("Walkable" = color_alpha[2],
+                               "Nearby" = color_alpha[4],
+                               "Far" = color_alpha[6],
+                               "Distant" = color_alpha[3]),
+                    labels = c("Walkable\n(<1.5km)", 
+                               "Nearby\n(1.5-3km)",
+                               "Far\n(3-15km)",
+                               "Distant\n(>15km)")) +  
+  geom_density(data = plotdata1,
+               mapping = aes(x = dist_km_log2,
+                             y = after_stat(density),
+                             linetype = period),
+               color = "black",
+               linewidth = 0.4
+               ) +
+  scale_linetype_manual(name = "Period",
+                        values = c("before" = "dashed",
+                                   "after" = "solid"),
+                        label = c("before" = "Pre-pandemic",
+                                  "after" = "Pandemic\noutbreak")) +
+  scale_x_continuous(breaks = breaks_x_axis,
+                     labels = parse(text = paste("2^", breaks_x_axis, sep = ""))) +
+  coord_fixed(xlim = xlim_axis,
+              clip = "off") + 
+  facet_rep_wrap(~category_google,
+                 nrow = 2,
+                 repeat.tick.labels = T,
+                 scales = "fixed") +
+  labs(x = "Travel Distance (km)",
+       y = "Density") +
+    theme_bw() +
+    theme(panel.grid.minor = element_blank(),
+          panel.grid.major.x = element_blank(),
+          strip.background = element_rect(fill = NA, colour = NA),
+          strip.text = element_text(size = 10),
+          aspect.ratio = 1,
+          legend.position = "right",
+          legend.text = element_text(size = unit(9, "pt")),
+          legend.title = element_text(size = unit(10, "pt"),
+                                      margin = margin(t = 10, b = 5)),
+          legend.spacing.y = unit(2, "mm"),
+          legend.box.margin = margin(l = 0)
+          ) +
+  guides(fill = guide_legend(override.aes = list(colour = NA),
+                             byrow = T),
+         linetype = guide_legend(byrow = T))
+
+# print(plot1)
+```
+
+
+```{r save_plot, eval=FALSE}
+figure_name <- "figure7.pdf"
+
+ggsave(plot = plot1,
+       filename = figure_name,
+       path = odir_plot,
+       width = 180,
+       height = 110,
+       units = "mm",
+       dpi = 300)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
