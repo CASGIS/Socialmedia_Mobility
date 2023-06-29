@@ -1,0 +1,396 @@
+---
+title: "figure6_mobility_temporal_change"
+author: "Kaixin"
+date: "2023-06-29"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_knit$set(root.dir = "~/Socialmedia_Mobility/")
+```
+
+
+```{r initial, include=FALSE}
+library(tidyverse)
+library(data.table)
+library(lubridate)
+library(ggdist)
+library(scales)
+library(zoo)
+library(patchwork)
+library(cowplot)
+
+odir_plot <-
+  "publication/figure6_mobility_temporal_change/"
+```
+
+
+```{r preset_color}
+source("publication/color_setting.R")
+```
+
+
+# figure 6a
+
+```{r file_path_figure_6a}
+ifile_checkins <-
+  "data/processed/01_checkins.csv.gz"
+ifile_city_select <-
+  "data/raw/figure5_city_select_50percent.csv"
+odir_data <-
+  "data/processed/"
+```
+
+
+```{r input_data_figure_6a}
+checkins <-
+  fread(ifile_checkins,
+        select = c("created_at" = "Date", 
+                   "userid" = "character",
+                   "city" = "character", 
+                   "category_google" = "character",
+                   "containerid" = "character"))
+
+# str(checkins)
+```
+
+
+```{r visits_to_six_categories_of_places}
+category_exclude <-
+  c("Others", "Education", "")
+
+# calculate the daily visits to six categories of places for cities
+visits_category_city <-
+  checkins[, .(visits = .N), 
+           by = .(created_at, city, category_google)] %>%
+  .[city != ""] %>%
+  .[!(category_google %in% category_exclude)]
+
+# 7 days moving average
+visits_7MA <-
+  visits_category_city %>%
+  .[order(city, category_google, created_at)] %>%
+  .[, visits_7MA := rollmean(visits, k = 7, fill = NA), by = .(city, category_google)]
+```
+
+
+```{r define_time_period}
+period_before <-
+  c(ymd("2019-07-01"):ymd("2019-12-31"))
+
+period_after <-
+  c(ymd("2020-01-20"):ymd("2020-02-28"))
+```
+
+
+```{r select_cities}
+visits_sum_before <-
+  visits_7MA[created_at %in% period_before] %>%
+  .[, .(visits_sum = sum(visits, na.rm = T)), by = .(city)] %>%
+  .[order(-visits_sum)]
+
+city_select <- 
+  visits_sum_before[visits_sum > 10000, city]
+```
+
+
+```{r calcualtion}
+visits_prop_city <-
+  visits_7MA %>%
+  .[, visits_sum_per_city := sum(visits_7MA, na.rm = T), by = .(city, created_at)] %>%
+  .[, visits_prop_per_category := visits_7MA/visits_sum_per_city]
+
+prop_before <-
+  visits_prop_city[created_at %in% period_before] %>%
+  .[, .(prop_median_before = median(visits_prop_per_category, na.rm = T)), by = .(city, category_google)]
+
+prop_after <-
+  visits_prop_city[created_at %in% period_after] %>%
+  .[, .(prop_median_after = median(visits_prop_per_category, na.rm = T)), by = .(city, category_google)]
+
+prop_change <-
+  merge(prop_before,
+        prop_after,
+        by = c("city", "category_google")) %>%
+  .[, prop_change := prop_median_after/prop_median_before-1]
+```
+
+
+```{r prepare_plotdata_figure_6a}
+# plotdata1
+plotdata1 <-
+  # select cities
+  prop_change[city %in% city_select] %>%
+  # remove the outlier
+  .[, ':='(q1_prop_change = quantile(prop_change, 0.25, na.rm = T),
+           q3_prop_change = quantile(prop_change, 0.75, na.rm = T)),
+    by = .(category_google)] %>%
+  .[, iqr_prop_change := q3_prop_change - q1_prop_change] %>%
+  .[, threshold := 1.5 * iqr_prop_change] %>%
+  .[prop_change >= q1_prop_change - threshold & 
+      prop_change <= q3_prop_change + threshold] %>%
+  # sort the categories of places by median proportion change value
+  .[, prop_change_median := median(prop_change, na.rm = T),
+            by = .(category_google)] %>%
+  .[, category_google := reorder(category_google, prop_change_median, decreasing = F)]
+
+# plotdata2
+visits_after <-
+  visits_7MA %>%
+  .[created_at %in% period_after] %>%
+  .[, .(visits_sum_after = sum(visits, na.rm = T)), by = .(category_google)] %>%
+  .[, visits_sum_after_log := log10(visits_sum_after)]
+
+plotdata2 <-
+  visits_after %>%
+  # sort the categories of palces
+  .[, category_google := factor(category_google,
+                                levels = levels(plotdata1$category_google))]
+```
+
+
+```{r plot_figure_6a}
+p1 <-
+  ggplot(plotdata1) +
+  geom_vline(aes(xintercept = 0),
+             color = "grey50",
+             linetype = "dashed") +
+  stat_halfeye(aes(x = prop_change,
+                   y = category_google,
+                   fill = category_google),
+               color = NA,
+               alpha = 0.8) +
+  geom_boxplot(aes(x = prop_change,
+                   y = category_google),
+               width = 0.2,
+               outlier.color = NA) +
+  scale_fill_manual(values = c("Residential" = color_primary[1],
+                               "Workplaces" = color_primary[2],
+                               "Retail & recreation" = color_primary[3],
+                               "Parks" = color_primary[4],
+                               "Transit stations" = color_primary[5],
+                               "Grocery & pharmacy" = color_primary[6])) +
+  scale_x_continuous(limits = c(-1.25, 1.25),
+                     breaks = seq(-1, 1, 0.5),
+                     labels = c("-100%","-50%","0","+50%","+100%"),
+                     expand = c(0.02, 0.02)) +
+  scale_y_discrete(expand = c(0.1, 0)) +
+  labs(x = "Proportion change in number of visits") +
+  theme_bw() +
+  theme(text = element_text(color = "black"),
+        axis.title.y = element_blank(),
+        axis.text.y = element_text(color = "black"),
+        legend.position = "none",
+        axis.ticks.y = element_blank(),
+        panel.grid = element_blank())
+
+p2 <-
+  ggplot(plotdata2) +
+  geom_col(mapping = aes(x = visits_sum_after_log,
+                         y = category_google,
+                         fill = category_google),
+           width = 0.6,
+           alpha = 0.8) +
+  scale_fill_manual(values = c("Residential" = color_primary[1],
+                               "Workplaces" = color_primary[2],
+                               "Retail & recreation" = color_primary[3],
+                               "Parks" = color_primary[4],
+                               "Transit stations" = color_primary[5],
+                               "Grocery & pharmacy" = color_primary[6])) +
+  scale_x_continuous(limits = c(4, 6),
+                     breaks = seq(4, 6, 1),
+                     expand = c(0, 0.3),
+                     labels = math_format(10^.x),
+                     oob = rescale_none) +
+  scale_y_discrete(expand = expand_scale(mult = c(0.155, 0.14))) +
+  labs(x = "Number of visits") +
+  theme_bw() +
+  theme(text = element_text(color = "black"),
+        axis.title.y = element_blank(),
+        axis.text.y = element_blank(),
+        axis.ticks.y = element_blank(),
+        legend.position = "none",
+        panel.grid = element_blank()
+        )
+
+plot1 <-
+  p1 + p2 + plot_layout(widths = c(4, 1))
+
+# print(plot1)
+```
+
+
+# figure 6b
+
+```{r file_path_figure_6b}
+city_select <-
+  "data/raw/figure5_city_select_50percent.csv"
+```
+
+
+```{r input_data_figure_6b}
+city_select <-
+  fread(ifile_city_select)
+```
+
+
+```{r number_of_POIs_for_cities}
+checkins_res_nonres <-
+  checkins[!(category_google %in% category_exclude)] %>%
+  .[, category := fcase(category_google == "Residential", "Residential",
+                        category_google != "Residential", "Non-residential")] %>%
+  .[, ':='(year = year(created_at), month = month(created_at))]
+
+poinum <- 
+  checkins_res_nonres[, .(poinum = uniqueN(containerid)), 
+                      by = .(city, userid, category, year, month)]
+
+poinum_city <-
+  poinum[, .(poinum_city = sum(poinum, na.rm = T)/uniqueN(userid)), 
+         by = .(city, category, year, month)]
+
+
+# calculate the relative change value
+baseline <-
+  poinum_city[year == 2019 & month >= 7] %>%
+  .[, .(poinum_city_baseline = median(poinum_city, na.rm = T)), 
+        by = .(city, category)]
+
+poinum_city_relative <-
+  merge(poinum_city,
+        baseline,
+        all.x = T,
+        by = c("category", "city")) %>%
+  .[, poinum_city_relative := poinum_city/poinum_city_baseline - 1]
+```
+
+
+```{r prepare_plotdata_figure_6b}
+plotdata3 <-
+  poinum_city_relative %>%
+  .[city %in% city_select$city_filter] %>%
+  .[, axis_date := ymd(paste0(year, "-", month, "-01"))] %>%
+  .[order(city, category, axis_date)] %>%
+  # box plot method
+  .[, ':='(q1 = quantile(poinum_city_relative, 0.25),
+                  q3 = quantile(poinum_city_relative, 0.75)),
+           by = .(axis_date, category)] %>%
+  .[, iqr := q3 - q1] %>%
+  .[, threshold := 1.5 * iqr] %>%
+  .[poinum_city_relative >= q1 - threshold & 
+      poinum_city_relative <= q3 + threshold]
+
+median_point <-
+  plotdata3[, .(median_value = median(poinum_city_relative, na.rm = T)), 
+            by = .(category, axis_date)]
+```
+
+
+```{r plot_figure_6b}
+plot2 <-
+  ggplot() +
+  geom_line(median_point,
+            mapping = aes(x = axis_date,
+                          y = median_value,
+                          color = category),
+            position = position_dodge(width = 20)) +
+  stat_pointinterval(plotdata3,
+                     mapping = aes(x = axis_date,
+                                   y = poinum_city_relative,
+                                   color = category), 
+                     shape = 21,
+                     point_fill = "white",
+                     point_size = 1.5,
+                     position = position_dodge(width = 20),
+                     point_interval = "median_qi",
+                     .width = c(0.66, 0.95)) +
+  geom_vline(xintercept = ymd("2020-01-20"),
+             color = "red",
+             linetype = "dashed") +
+  geom_label(aes(label = "Announcement of human-to-human transmission",
+                 x = ymd("2020-01-25"),
+                 y = -0.185),
+             color = "red",
+             fill = NA,
+             label.size = NA,
+             hjust = 0,
+             # vjust = "inward",
+             size = 2.8,
+             lineheight = 0.8) +
+  scale_color_manual(values = c("Non-residential" = color_primary[6],
+                                "Residential" = color_primary[2])) +
+  scale_x_date(limits = c(ymd("2018-12-20"), ymd("2020-10-20")),
+               breaks = "2 month",
+               labels = c("text",
+                          "Jan\n2019",
+                          "Mar",
+                          "May",
+                          "Jul",
+                          "Sep",
+                          "Nov",
+                          "Jan\n2020",
+                          "Mar",
+                          "May",
+                          "Jul",
+                          "Sep",
+                          "Nov",
+                          "text"
+                          )
+               ) +
+  scale_y_continuous(limits = c(-0.2, 0.3),
+                     breaks = seq(-0.2, 0.3, 0.1),
+                     labels = c("-20%", "-10%", "0", "+10%", "+20%", "+30%")) +
+  labs(y = "Percentage change\nin number of unique POIs") +
+  theme_bw() +
+  theme(legend.position = c(0.24, 0.9),
+        legend.title = element_blank(),
+        legend.background = element_blank(),
+        legend.key = element_blank(),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size = 10),
+        panel.grid.minor = element_blank()) +
+  guides(color = guide_legend(nrow = 1))
+
+# print(plot2)
+```
+
+
+# figure 6
+
+```{r save_plot, eval=FALSE}
+p_6 <-
+  plot_grid(plot1, plot2,
+            # align = "v", axis = "l",
+            nrow = 2, rel_heights = c(1.1, 1))
+
+figure_name <- "figure6.pdf"
+
+ggsave(plot = p_6,
+       filename = figure_name,
+       path = odir_plot,
+       width = 180,
+       height = 130,
+       units = "mm",
+       dpi = 300)
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
