@@ -12,12 +12,13 @@ This repository provides the R code that accompanies the article:
 ## Structure of this repostitory
 The folder *publication* contains the R code to reproducing the main results.  
 
+```bash
 **publication**  
 ├── color_setting.R  
 ├── **figure1_data_description**  
-│       ├── figure1_data_description.Rmd  
-│       ├── figure1.pdf  
-│       └── figure1.png  
+│   ├── figure1_data_description.Rmd  
+│   ├── figure1.pdf  
+│   └── figure1.png  
 ├── **figure2_mobility_index**  
 │   ├── figure2_mobility_index.Rmd  
 │   └── figure2.pdf  
@@ -36,6 +37,7 @@ The folder *publication* contains the R code to reproducing the main results.
 └── **figure7_mobility_distance**  
     ├── figure7_mobility_distance.Rmd  
     └── figure7.pdf  
+```
 
 ## Data availability
 
