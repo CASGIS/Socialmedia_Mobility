@@ -15,9 +15,9 @@ The folder *publication* contains the R code to reproducing the main results.
 **publication**  
 ├── color_setting.R  
 ├── **figure1_data_description**  
-│   ├── figure1_data_description.Rmd  
-│   ├── figure1.pdf  
-│   └── figure1.png  
+│       ├── figure1_data_description.Rmd  
+│       ├── figure1.pdf  
+│       └── figure1.png  
 ├── **figure2_mobility_index**  
 │   ├── figure2_mobility_index.Rmd  
 │   └── figure2.pdf  
