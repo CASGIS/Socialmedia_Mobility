@@ -41,7 +41,7 @@ publication
 
 ## Data availability
 
-Due to privacy concerns, we only provide the aggregated mobility data: the percentage change in number of visits to six categories of places (*Residential, Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy*). The aggregated data can be downloaded from: .
+Due to privacy concerns, we only provide the aggregated mobility data: the percentage change in number of visits to six categories of places (*Residential, Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy*). The aggregated data can be downloaded from:
 
 ## License
 
