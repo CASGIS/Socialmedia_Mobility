@@ -219,7 +219,7 @@ plot1 <-
   scale_linetype_manual(name = "Period",
                         values = c("before" = "dashed",
                                    "after" = "solid"),
-                        label = c("before" = "Pre-pandemic",
+                        label = c("before" = "Baseline",
                                   "after" = "Pandemic\noutbreak")) +
   scale_x_continuous(breaks = breaks_x_axis,
                      labels = parse(text = paste("2^", breaks_x_axis, sep = ""))) +
