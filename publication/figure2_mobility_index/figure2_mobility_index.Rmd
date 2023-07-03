@@ -416,7 +416,7 @@ plot2 <-
 caption_text <-
   paste0(
     "A: Start of the Chunyun period", "\n",
-    "B: Announcement of human-to-human transmission", "\n",
+    "B: Announcement of COVID-19 human-to-human transmission", "\n",
     "C: All provinces in mainland China (except Tibet) launched the highest level of emergency responses", "\n",
     "D: 18 provinces lowered the level of emergency response", "\n",
     "a: New Year's Day", "\n",
