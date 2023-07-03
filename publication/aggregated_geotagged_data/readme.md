@@ -22,6 +22,7 @@ We collected 210 million geotagged posts uploaded by 10 million users from Weibo
 | category | six categories of places (*Residential, Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy*) |
 | visits_7MA_percentage_change | percentage change in number of visits compared to baseline days |
 
-## 
+## License
+……
 
 
