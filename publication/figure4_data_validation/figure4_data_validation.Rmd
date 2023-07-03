@@ -866,12 +866,12 @@ plot <-
                "userprop_rec_relative" = color_secondary[2],
                "userprop_rec_7MA_relative" = color_primary[2]), 
     labels = c(
-      "CMI_relative" = "Baidu indice",
-      "CMI_7MA_relative" = "Baidu indice (7MA)",
-      "userprop_relative" = "Weibo indice",
-      "userprop_7MA_relative" = "Weibo indice (7MA)",
-      "userprop_rec_relative" = "Weibo indice (corrected)",
-      "userprop_rec_7MA_relative" = "Weibo indice (corrected, 7MA)")
+      "CMI_relative" = "Baidu CMI index",
+      "CMI_7MA_relative" = "Baidu CMI index (7MA)",
+      "userprop_relative" = "Weibo CMI index",
+      "userprop_7MA_relative" = "Weibo CMI index (7MA)",
+      "userprop_rec_relative" = "Weibo CMI index (corrected)",
+      "userprop_rec_7MA_relative" = "Weibo CMI index (corrected, 7MA)")
     ) +
   scale_linewidth_manual(
     values = c("CMI_relative" = 0.1,
