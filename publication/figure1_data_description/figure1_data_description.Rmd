@@ -427,8 +427,8 @@ p_1c <-
                            expression(10 ^ 5))) +
   scale_fill_manual(values = color_primary) +
   coord_cartesian(xlim = c(0, 4)) +
-  labs(x = "Number of posts located in specific POIs",
-       y = "Number of posts") +
+  labs(x = "Number of posts located in POIs",
+       y = "Number of POIs") +
   theme_bw() +
   theme(axis.title = element_text(size = unit(8, "pt")),
         axis.title.x = element_text(margin = margin(t = 8)),
@@ -444,7 +444,7 @@ p_1c <-
 
 # figure 1
 
-```{r save_plot_merged, eval=TRUE}
+```{r save_plot_merged, eval=FALSE}
 plot_align <-
   align_plots(p_1a, p_1b, align = "v", axis = "l")
 
