@@ -308,7 +308,7 @@ plot2 <-
   geom_vline(xintercept = ymd("2020-01-20"),
              color = "red",
              linetype = "dashed") +
-  geom_label(aes(label = "Announcement of human-to-human transmission",
+  geom_label(aes(label = "National announcement of COVID-19 human-to-human transmission",
                  x = ymd("2020-01-25"),
                  y = -0.185),
              color = "red",
