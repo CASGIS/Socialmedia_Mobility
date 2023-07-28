@@ -453,7 +453,7 @@ plot_merge <-
 ```
 
 
-```{r save_plot}
+```{r save_plot, eval=FALSE}
 figure_name <-
   "figure2.pdf"
 
