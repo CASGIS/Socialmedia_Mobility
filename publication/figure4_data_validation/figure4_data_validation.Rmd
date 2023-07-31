@@ -1,6 +1,5 @@
 ---
 title: "figure4_data_validation"
-author: "Kaixin"
 date: "2023-06-28"
 output: html_document
 ---

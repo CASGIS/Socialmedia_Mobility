@@ -1,6 +1,5 @@
 ---
 title: "figure5_subpopulations_heterogeneity"
-author: "Kaixin"
 date: "2023-06-28"
 output: html_document
 ---

@@ -1,6 +1,5 @@
 ---
 title: "figure6_mobility_temporal_change"
-author: "Kaixin"
 date: "2023-06-29"
 output: html_document
 ---

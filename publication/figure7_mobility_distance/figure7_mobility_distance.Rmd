@@ -1,6 +1,5 @@
 ---
 title: "figure7_mobility_distance"
-author: "Kaixin"
 date: "2023-06-29"
 output: html_document
 ---

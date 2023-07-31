@@ -1,6 +1,5 @@
 ---
 title: "figure3_test_representativeness"
-author: "Kaixin"
 date: "2023-06-27"
 output: html_document
 ---
