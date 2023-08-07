@@ -114,7 +114,7 @@ plot1 <-
            y = 0.0025,
            label = expression(y[census] == 0.897*x[users] + 0.004,
                               "R-squared = 0.683\n\n",
-                              "p-value < 0.001\n"),
+                              "P-value < 0.001\n"),
            size = 4,
            vjust = "inward",
            hjust = 1) +
@@ -307,7 +307,7 @@ p_3 <-
             labels = c("a", "b"), vjust = 1.3,
             nrow = 1, rel_widths = c(2, 1.25))
 
-figure_name <- "figure3.pdf"
+figure_name <- "figure3_test.pdf"
 
 ggsave(filename = figure_name,
        plot = p_3,
