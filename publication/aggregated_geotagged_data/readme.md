@@ -23,6 +23,5 @@ We collected 210 million geotagged posts uploaded by 10 million users from Weibo
 | visits_7MA_percentage_change | percentage change in number of visits compared to baseline days |
 
 ## License
-……
 
 
