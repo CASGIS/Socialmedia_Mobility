@@ -4,7 +4,28 @@
     "href": "index.html",
     "title": "website",
     "section": "",
-    "text": "This is a Quarto website.\nTo learn more about Quarto websites visit https://quarto.org/docs/websites.\n\n1 + 1\n\n[1] 2"
+    "text": "This is a Quarto website."
+  },
+  {
+    "objectID": "index.html#data-source",
+    "href": "index.html#data-source",
+    "title": "website",
+    "section": "Data source",
+    "text": "Data source"
+  },
+  {
+    "objectID": "index.html#data-process",
+    "href": "index.html#data-process",
+    "title": "website",
+    "section": "Data process",
+    "text": "Data process\n\nReferring to the classification criterion of categories in Google Community Mobility Report (https://www.google.com/covid19/mobility/), we classified POIs attached to geotagged posts into six categories of places by their social function.\nCounting the daily visits to these categories of places for each cities.\nSmoothing the daily visits by the method of 7-day moving average.\nCalculating the percentage change by comparing visits to baseline days. The baseline days represent a normal value for that day of the week and are given as the median value over the period of the second half of 2019."
+  },
+  {
+    "objectID": "index.html#data-description",
+    "href": "index.html#data-description",
+    "title": "website",
+    "section": "Data description",
+    "text": "Data description\n\n\n\n\n\n\n\nColumn\nDescription\n\n\n\n\nct_adcode\ncity code\n\n\ncity_ch\ncity name (Chinese)\n\n\ncity_en\ncity name (English)\n\n\npr_adcode\nprovince code\n\n\npr_ch\nprovince name (Chinese)\n\n\npr_en\nprovince name (English)\n\n\ncreated_at\ndate\n\n\ncategory\nsix categories of places (Residential, Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy)\n\n\nvisits_7MA_percentage_change\npercentage change in number of visits compared to baseline days"
   },
   {
     "objectID": "about.html",
