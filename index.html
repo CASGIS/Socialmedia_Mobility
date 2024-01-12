@@ -24,7 +24,6 @@ ul.task-list li input[type="checkbox"] {
 
 
 <script src="site_libs/quarto-nav/quarto-nav.js"></script>
-<script src="site_libs/quarto-nav/headroom.min.js"></script>
 <script src="site_libs/clipboard/clipboard.min.js"></script>
 <script src="site_libs/quarto-search/autocomplete.umd.js"></script>
 <script src="site_libs/quarto-search/fuse.min.js"></script>
@@ -40,11 +39,11 @@ ul.task-list li input[type="checkbox"] {
 <link href="site_libs/bootstrap/bootstrap-icons.css" rel="stylesheet">
 <link href="site_libs/bootstrap/bootstrap.min.css" rel="stylesheet" id="quarto-bootstrap" data-mode="light">
 <script id="quarto-search-options" type="application/json">{
-  "location": "navbar",
+  "location": "sidebar",
   "copy-button": false,
   "collapse-after": 3,
-  "panel-placement": "end",
-  "type": "overlay",
+  "panel-placement": "start",
+  "type": "textbox",
   "limit": 20,
   "language": {
     "search-no-results-text": "No results",
@@ -63,38 +62,11 @@ ul.task-list li input[type="checkbox"] {
 <link rel="stylesheet" href="styles.css">
 </head>
 
-<body class="nav-fixed">
+<body>
 
 <div id="quarto-search-results"></div>
-  <header id="quarto-header" class="headroom fixed-top">
-    <nav class="navbar navbar-expand-lg navbar-dark ">
-      <div class="navbar-container container-fluid">
-      <div class="navbar-brand-container">
-    <a class="navbar-brand" href="./index.html">
-    <span class="navbar-title">website</span>
-    </a>
-  </div>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
-  <span class="navbar-toggler-icon"></span>
-</button>
-          <div class="collapse navbar-collapse" id="navbarCollapse">
-            <ul class="navbar-nav navbar-nav-scroll me-auto">
-  <li class="nav-item">
-    <a class="nav-link active" href="./index.html" aria-current="page">
- <span class="menu-text">Data</span></a>
-  </li>  
-  <li class="nav-item">
-    <a class="nav-link" href="./about.html">
- <span class="menu-text">About</span></a>
-  </li>  
-</ul>
-              <div id="quarto-search" class="" title="Search"></div>
-          </div> <!-- /navcollapse -->
-      </div> <!-- /container-fluid -->
-    </nav>
-</header>
 <!-- content -->
-<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article page-navbar">
+<div id="quarto-content" class="quarto-container page-columns page-rows-contents page-layout-article">
 <!-- sidebar -->
 <!-- margin-sidebar -->
     <div id="quarto-margin-sidebar" class="sidebar margin-sidebar">
@@ -103,13 +75,13 @@ ul.task-list li input[type="checkbox"] {
    
   <ul>
   <li><a href="#data" id="toc-data" class="nav-link active" data-scroll-target="#data">Data</a></li>
-  <li><a href="#about-data" id="toc-about-data" class="nav-link" data-scroll-target="#about-data">About data</a>
+  <li><a href="#data-feature" id="toc-data-feature" class="nav-link" data-scroll-target="#data-feature">Data feature</a></li>
+  <li><a href="#data-detail" id="toc-data-detail" class="nav-link" data-scroll-target="#data-detail">Data detail</a>
   <ul class="collapse">
   <li><a href="#data-source" id="toc-data-source" class="nav-link" data-scroll-target="#data-source">Data source</a></li>
   <li><a href="#data-process" id="toc-data-process" class="nav-link" data-scroll-target="#data-process">Data process</a></li>
   <li><a href="#data-description" id="toc-data-description" class="nav-link" data-scroll-target="#data-description">Data description</a></li>
   </ul></li>
-  <li><a href="#detail" id="toc-detail" class="nav-link" data-scroll-target="#detail">Detail</a></li>
   <li><a href="#download" id="toc-download" class="nav-link" data-scroll-target="#download">Download</a></li>
   <li><a href="#how-to-cite" id="toc-how-to-cite" class="nav-link" data-scroll-target="#how-to-cite">How to cite</a></li>
   <li><a href="#contact-us" id="toc-contact-us" class="nav-link" data-scroll-target="#contact-us">Contact us</a></li>
@@ -140,11 +112,15 @@ ul.task-list li input[type="checkbox"] {
 <section id="data" class="level1">
 <h1>Data</h1>
 </section>
-<section id="about-data" class="level1">
-<h1>About data</h1>
-<p>Geotagged social media data in China We collected 210 million geotagged posts uploaded by 10 million users from Weibo from 2019 to 2020. Weibo, the Chinese version of Twitter, is the most widely used social media platform in China (https://weibo.com).</p>
+<section id="data-feature" class="level1">
+<h1>Data feature</h1>
+<p>Geotagged social media data in China.</p>
+</section>
+<section id="data-detail" class="level1">
+<h1>Data detail</h1>
 <section id="data-source" class="level2">
 <h2 class="anchored" data-anchor-id="data-source">Data source</h2>
+<p>We collected 210 million geotagged posts uploaded by 10 million users from Weibo from 2019 to 2020. Weibo, the Chinese version of Twitter, is the most widely used social media platform in China (https://weibo.com).</p>
 </section>
 <section id="data-process" class="level2">
 <h2 class="anchored" data-anchor-id="data-process">Data process</h2>
@@ -209,9 +185,6 @@ ul.task-list li input[type="checkbox"] {
 </table>
 </section>
 </section>
-<section id="detail" class="level1">
-<h1>Detail</h1>
-</section>
 <section id="download" class="level1">
 <h1>Download</h1>
 <p>Download:XXX</p>
@@ -222,7 +195,7 @@ ul.task-list li input[type="checkbox"] {
 </section>
 <section id="contact-us" class="level1">
 <h1>Contact us</h1>
-<p>zhukaixin@lreis.ac.cn wangjh@lreis.ac.cn</p>
+<p>zhukaixin@lreis.ac.cn<br> wangjh@lreis.ac.cn<br> <br> Team: https://github.com/CASGIS<br> <br> Institute of Geographic Sciences and Natural Resources Research,<br> University of Chinese Academy of Sciences</p>
 
 
 </section>
