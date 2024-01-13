@@ -1,11 +1,89 @@
 ---
 title: "website"
+format: 
+  html: 
+    toc-location: right
+    toc-depth: 1
+    toc-title: Contents
 ---
 
-This is a Quarto website.
+# Data
 
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+## Percentage change in number of visits to specific places in China during 2020
 
-```{r}
-1 + 1
-```
+> ### Non-residential or Residential places
+
+![](img/data2.png){fig-align="center"}
+
+> ## Six categories of places
+
+::: panel-tabset
+## Residential
+
+![](img/data1.png){fig-align="center"}
+
+## Workplaces
+
+![](img/data1.png){fig-align="center"}
+
+## Retail & recreation
+
+![](img/data1.png){fig-align="center"}
+
+## Parks
+
+![](img/data1.png){fig-align="center"}
+
+## Transit stations
+
+![](img/data1.png){fig-align="center"}
+
+## Grocery & pharmacy
+
+![](img/data1.png){fig-align="center"}
+:::
+
+# Download
+
+Download link: <https://github.com/CASGIS/Socialmedia_Mobility/tree/main/publication/aggregated_geotagged_data>
+
+# How to cite
+
+Using XXX Dataset should cite: XXX
+
+# About data
+
+Geotagged social media data in China.
+
+## Feature
+
+# Data detail
+
+## Data source
+
+We collected 210 million geotagged posts uploaded by 10 million users from Weibo from 2019 to 2020. Weibo, the Chinese version of Twitter, is the most widely used social media platform in China (https://weibo.com).
+
+## Data process
+
+1.  Referring to the classification criterion of categories in Google Community Mobility Report (https://www.google.com/covid19/mobility/), we classified POIs attached to geotagged posts into six categories of places by their social function.
+2.  Counting the daily visits to these categories of places for each cities.
+3.  Smoothing the daily visits by the method of 7-day moving average.
+4.  Calculating the percentage change by comparing visits to baseline days. The baseline days represent a normal value for that day of the week and are given as the median value over the period of the second half of 2019.
+
+## Data description
+
+| Column                       | Description                                                                                                                |
+|-----------------|-------------------------------------------------------|
+| ct_adcode                    | city code                                                                                                                  |
+| city_ch                      | city name (Chinese)                                                                                                        |
+| city_en                      | city name (English)                                                                                                        |
+| pr_adcode                    | province code                                                                                                              |
+| pr_ch                        | province name (Chinese)                                                                                                    |
+| pr_en                        | province name (English)                                                                                                    |
+| created_at                   | date                                                                                                                       |
+| category                     | six categories of places (*Residential, Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy*) |
+| visits_7MA_percentage_change | percentage change in number of visits compared to baseline days                                                            |
+
+# Contact us
+
+zhukaixin\@lreis.ac.cn<br> wangjh\@lreis.ac.cn<br> <br> Team: https://github.com/CASGIS<br> <br> Institute of Geographic Sciences and Natural Resources Research,<br> University of Chinese Academy of Sciences
