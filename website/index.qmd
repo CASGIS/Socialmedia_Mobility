@@ -1,6 +1,6 @@
 ---
-format: 
-  html: 
+format:
+  html:
     toc-location: right
     toc-depth: 1
     toc-title: Contents
@@ -16,107 +16,78 @@ Here, using **210 million geotagged posts** from 10 million users in Weibo socia
 
 <br>
 
-##### Features
----
+#### Features
+
+***
+
 - Our data is probably the first mobility dataset depicting the diverse mobility response in China during the pandemic from the perspective of amenities.
-
-- The data shows the changes in visits to six categories of places: Residential, Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy.
-
+- The data shows the changes in visits to six categories of places: *Residential, Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy*.
 - The fine-grained mobility data could supplement the available city-level mobility metrics and fill the data gap in *Google Community Mobility Report* in mainland China.
-
 - The data could help design targeted policies to promote outdoor activities and stimulate economic recovery.
 
 <br>
 
-#### Percentage change in number of visits to six categories of places in China during 2020
----
-![](img/data2.png){fig-align="center"}
+#### Changes in visits to six categories of places in China during 2020
 
-<!-- > *A: Start of the Chunyun period* <br>
-> *B: Announcement of COVID-19 human-to-human transmission* <br>
-> *C: All provinces in mainland China (except Tibet) launched the highest level of emergency responses* <br>
-> *D: 18 provinces lowered the level of emergency response* <br>
-> *a: New Year's Day* <br>
-> *b: the Spring Festival* <br>
-> *c: Tomb-sweeping Day* <br>
-> *d: May Day* <br>
-> *e: the Dragon Boat Festival* <br>
-> *f: National Holiday & Mid-autumn Festival* <br> -->
-
-Non-residential or Residential places
-Six categories of places
+***
 
 ::: panel-tabset
-## Residential
+###### Residential
 
 ![](img/data1.png){fig-align="center"}
 
-## Workplaces
+###### Workplaces
 
 ![](img/data1.png){fig-align="center"}
 
-## Retail & recreation
+###### Retail & recreation
 
 ![](img/data1.png){fig-align="center"}
 
-## Parks
+###### Parks
 
 ![](img/data1.png){fig-align="center"}
 
-## Transit stations
+###### Transit stations
 
 ![](img/data1.png){fig-align="center"}
 
-## Grocery & pharmacy
+###### Grocery & pharmacy
 
 ![](img/data1.png){fig-align="center"}
 :::
 
 <br>
-<br>
 
+#### Changes in visits to residential/non-residential places in China during 2020
+
+***
+
+![](img/data2.png){fig-align="center"}
+
+<br>
+<br>
 
 # About data
 
-Geotagged social media data in China.
+#### Data source
 
-<br>
-<br>
-
-## Feature
-
-<br>
-<br>
-
-
-# Download
-
-Download link: <https://github.com/CASGIS/Socialmedia_Mobility/tree/main/publication/aggregated_geotagged_data>
-
-<br>
-<br>
-
-# How to cite
-
-Using XXX Dataset should cite: XXX
-
-<br>
-<br>
-
-# Data detail
-
-## Data source
+***
 
 We collected 210 million geotagged posts uploaded by 10 million users from Weibo from 2019 to 2020. Weibo, the Chinese version of Twitter, is the most widely used social media platform in China (https://weibo.com).
 
-## Data process
+#### Data process
 
-1.  Referring to the classification criterion of categories in Google Community Mobility Report (https://www.google.com/covid19/mobility/), we classified POIs attached to geotagged posts into six categories of places by their social function.
-2.  Counting the daily visits to these categories of places for each cities.
-3.  Smoothing the daily visits by the method of 7-day moving average.
-4.  Calculating the percentage change by comparing visits to baseline days. The baseline days represent a normal value for that day of the week and are given as the median value over the period of the second half of 2019.
+***
 
-## Data description
+1. Referring to the classification criterion of categories in Google Community Mobility Report (https://www.google.com/covid19/mobility/), we classified POIs attached to geotagged posts into six categories of places by their social function.
+2. Counting the daily visits to these categories of places for each cities.
+3. Smoothing the daily visits by the method of 7-day moving average.
+4. Calculating the percentage change by comparing visits to baseline days. The baseline days represent a normal value for that day of the week and are given as the median value over the period of the second half of 2019.
+
+#### Data description
+
+***
 
 | Column                       | Description                                                                                                                |
 |-----------------|-------------------------------------------------------|
@@ -128,10 +99,24 @@ We collected 210 million geotagged posts uploaded by 10 million users from Weibo
 | pr_en                        | province name (English)                                                                                                    |
 | created_at                   | date                                                                                                                       |
 | category                     | six categories of places (*Residential, Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy*) |
-| visits_7MA_percentage_change | percentage change in number of visits compared to baseline days                                                            |
+| visits_7MA_percentage_change | percentage change in number of visits compared to baseline days
 
 <br>
 <br>
+
+# Download
+<https://github.com/CASGIS/Socialmedia_Mobility/tree/main/publication/aggregated_geotagged_data>
+
+<br>
+<br>
+
+# How to cite
+
+Using the fine-grained mobility dataset should cite: XXX
+
+<br>
+<br>
+
 
 # Contact us
 
