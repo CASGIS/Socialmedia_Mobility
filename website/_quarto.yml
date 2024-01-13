@@ -10,23 +10,15 @@ website:
         text: Data
       - href: about.qmd
         text: About
-    # right: 
-    #   - href: "https://github.com/CASGIS/Socialmedia_Mobility"
-    #     icon: fa-github
+    right:
+      - href: https://github.com/CASGIS/Socialmedia_Mobility
+        icon: fa-github
 
 format:
   html:
     theme: Simplex
     # theme: cosmo
-    # css: styles.css
-    # css: bootstrap.css
+    css: my-styles.css
     toc: true
-
-# quarto:
-#   output:
-#     html_document:
-#       css: 
-#         - bootstrap.css
-#         - styles.css
 
 editor: visual
