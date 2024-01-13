@@ -120,4 +120,10 @@ Using the fine-grained mobility dataset should cite: XXX
 
 # Contact us
 
-zhukaixin\@lreis.ac.cn<br> wangjh\@lreis.ac.cn<br> <br> Team: https://github.com/CASGIS<br> <br> Institute of Geographic Sciences and Natural Resources Research,<br> University of Chinese Academy of Sciences
+zhukaixin\@lreis.ac.cn <br>
+wangjh\@lreis.ac.cn <br> 
+<br> 
+Team: <https://github.com/CASGIS> <br> 
+<br> 
+Institute of Geographic Sciences and Natural Resources Research,<br>
+University of Chinese Academy of Sciences
