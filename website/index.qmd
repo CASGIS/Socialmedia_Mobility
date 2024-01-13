@@ -1,5 +1,4 @@
 ---
-title: "website"
 format: 
   html: 
     toc-location: right
@@ -9,13 +8,38 @@ format:
 
 # Data
 
-## Percentage change in number of visits to specific places in China during 2020
+COVID-19 caused widespread disruption to normal lives and human activities. In **China**, the mobility behaviour response to the COVID-19 pandemic at the **intra-city levels** is largely unknown, mainly due to a lack of individual-level publicly available mobility data.
 
-> ### Non-residential or Residential places
+Globally, the *Google Community Mobility Report* provides a percentage change in place visit frequencies in six types of locations to help understand people's social activities within cities, but this dataset **does not include mainland China**.
+
+Here, using **210 million geotagged posts** from 10 million users in Weibo social media platform, our team provides fine-grained mobility data describing the daily percentage change in visits to functional amenities in China during 2020 compared to the baseline in 2019.
+
+### Feature
+---
+- The fine-grained mobility data could supplement the available city-level mobility metrics and fill the gap in *Google Community Mobility Report* in mainland China.
+
+- With this prior knowledge, governments can formulate corresponding policies for economic recovery, provide post-epidemic assistance to specific groups in need, and be well-prepared for the next global emergency.
+
+- Using massive geotagged social media data
+
+Percentage change in number of visits to specific places in China during 2020
+
+Non-residential or Residential places
 
 ![](img/data2.png){fig-align="center"}
 
-> ## Six categories of places
+<!-- > *A: Start of the Chunyun period* <br>
+> *B: Announcement of COVID-19 human-to-human transmission* <br>
+> *C: All provinces in mainland China (except Tibet) launched the highest level of emergency responses* <br>
+> *D: 18 provinces lowered the level of emergency response* <br>
+> *a: New Year's Day* <br>
+> *b: the Spring Festival* <br>
+> *c: Tomb-sweeping Day* <br>
+> *d: May Day* <br>
+> *e: the Dragon Boat Festival* <br>
+> *f: National Holiday & Mid-autumn Festival* <br> -->
+
+Six categories of places
 
 ::: panel-tabset
 ## Residential
@@ -43,19 +67,36 @@ format:
 ![](img/data1.png){fig-align="center"}
 :::
 
-# Download
+<br>
+<br>
 
-Download link: <https://github.com/CASGIS/Socialmedia_Mobility/tree/main/publication/aggregated_geotagged_data>
-
-# How to cite
-
-Using XXX Dataset should cite: XXX
 
 # About data
 
 Geotagged social media data in China.
 
+<br>
+<br>
+
 ## Feature
+
+<br>
+<br>
+
+
+# Download
+
+Download link: <https://github.com/CASGIS/Socialmedia_Mobility/tree/main/publication/aggregated_geotagged_data>
+
+<br>
+<br>
+
+# How to cite
+
+Using XXX Dataset should cite: XXX
+
+<br>
+<br>
 
 # Data detail
 
@@ -83,6 +124,9 @@ We collected 210 million geotagged posts uploaded by 10 million users from Weibo
 | created_at                   | date                                                                                                                       |
 | category                     | six categories of places (*Residential, Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy*) |
 | visits_7MA_percentage_change | percentage change in number of visits compared to baseline days                                                            |
+
+<br>
+<br>
 
 # Contact us
 

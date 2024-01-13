@@ -4,10 +4,7 @@ project:
 website:
   title: "website"
   navbar:
-    title: "CASGIS123"
-    left:
-      - icon: fa-github
-        href: https://github.com/CASGIS/Socialmedia_Mobility
+    title: "CASGIS"
 
 format:
   html:
@@ -18,8 +15,11 @@ format:
 
 editor: visual
 
+# left:
+#   - icon: fa-github
+#     href: https://github.com/CASGIS/Socialmedia_Mobility
+# right:
 #   - href: index.qmd
 #     text: Data
 #   - href: about.qmd
 #     text: About
-# right:
