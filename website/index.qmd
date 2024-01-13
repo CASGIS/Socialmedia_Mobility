@@ -14,18 +14,22 @@ Globally, the *Google Community Mobility Report* provides a percentage change in
 
 Here, using **210 million geotagged posts** from 10 million users in Weibo social media platform, our team provides fine-grained mobility data describing the daily percentage change in visits to functional amenities in China during 2020 compared to the baseline in 2019.
 
-### Feature
+<br>
+
+##### Features
 ---
-- The fine-grained mobility data could supplement the available city-level mobility metrics and fill the gap in *Google Community Mobility Report* in mainland China.
+- Our data is probably the first mobility dataset depicting the diverse mobility response in China during the pandemic from the perspective of amenities.
 
-- With this prior knowledge, governments can formulate corresponding policies for economic recovery, provide post-epidemic assistance to specific groups in need, and be well-prepared for the next global emergency.
+- The data shows the changes in visits to six categories of places: Residential, Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy.
 
-- Using massive geotagged social media data
+- The fine-grained mobility data could supplement the available city-level mobility metrics and fill the data gap in *Google Community Mobility Report* in mainland China.
 
-Percentage change in number of visits to specific places in China during 2020
+- The data could help design targeted policies to promote outdoor activities and stimulate economic recovery.
 
-Non-residential or Residential places
+<br>
 
+#### Percentage change in number of visits to six categories of places in China during 2020
+---
 ![](img/data2.png){fig-align="center"}
 
 <!-- > *A: Start of the Chunyun period* <br>
@@ -39,6 +43,7 @@ Non-residential or Residential places
 > *e: the Dragon Boat Festival* <br>
 > *f: National Holiday & Mid-autumn Festival* <br> -->
 
+Non-residential or Residential places
 Six categories of places
 
 ::: panel-tabset
