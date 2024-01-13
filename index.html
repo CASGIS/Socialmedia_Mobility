@@ -60,7 +60,7 @@ ul.task-list li input[type="checkbox"] {
 }</script>
 
 
-<link rel="stylesheet" href="bootstrap.css">
+<link rel="stylesheet" href="my-styles.css">
 </head>
 
 <body class="nav-fixed">
@@ -74,24 +74,7 @@ ul.task-list li input[type="checkbox"] {
     <span class="navbar-title">CASGIS</span>
     </a>
   </div>
-          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarCollapse" aria-controls="navbarCollapse" aria-expanded="false" aria-label="Toggle navigation" onclick="if (window.quartoToggleHeadroom) { window.quartoToggleHeadroom(); }">
-  <span class="navbar-toggler-icon"></span>
-</button>
-          <div class="collapse navbar-collapse" id="navbarCollapse">
-            <ul class="navbar-nav navbar-nav-scroll me-auto">
-  <li class="nav-item">
-    <a class="nav-link active" href="./index.html" aria-current="page">
- <span class="menu-text">Data</span></a>
-  </li>  
-</ul>
-            <ul class="navbar-nav navbar-nav-scroll ms-auto">
-  <li class="nav-item compact">
-    <a class="nav-link" href="https://github.com/CASGIS/Socialmedia_Mobility">
- <span class="menu-text"></span></a>
-  </li>  
-</ul>
-              <div id="quarto-search" class="" title="Search"></div>
-          </div> <!-- /navcollapse -->
+          <div id="quarto-search" class="" title="Search"></div>
       </div> <!-- /container-fluid -->
     </nav>
 </header>
@@ -105,9 +88,9 @@ ul.task-list li input[type="checkbox"] {
    
   <ul>
   <li><a href="#data" id="toc-data" class="nav-link active" data-scroll-target="#data">Data</a></li>
+  <li><a href="#about-data" id="toc-about-data" class="nav-link" data-scroll-target="#about-data">About data</a></li>
   <li><a href="#download" id="toc-download" class="nav-link" data-scroll-target="#download">Download</a></li>
   <li><a href="#how-to-cite" id="toc-how-to-cite" class="nav-link" data-scroll-target="#how-to-cite">How to cite</a></li>
-  <li><a href="#about-data" id="toc-about-data" class="nav-link" data-scroll-target="#about-data">About data</a></li>
   <li><a href="#data-detail" id="toc-data-detail" class="nav-link" data-scroll-target="#data-detail">Data detail</a></li>
   <li><a href="#contact-us" id="toc-contact-us" class="nav-link" data-scroll-target="#contact-us">Contact us</a></li>
   </ul>
@@ -116,38 +99,39 @@ ul.task-list li input[type="checkbox"] {
 <!-- main -->
 <main class="content" id="quarto-document-content">
 
-<header id="title-block-header" class="quarto-title-block default">
-<div class="quarto-title">
-<h1 class="title">website</h1>
-</div>
 
-
-
-<div class="quarto-title-meta">
-
-    
-  
-    
-  </div>
-  
-
-</header>
 
 <section id="data" class="level1">
 <h1>Data</h1>
-<section id="percentage-change-in-number-of-visits-to-specific-places-in-china-during-2020" class="level2">
-<h2 class="anchored" data-anchor-id="percentage-change-in-number-of-visits-to-specific-places-in-china-during-2020">Percentage change in number of visits to specific places in China during 2020</h2>
-<blockquote class="blockquote">
-<h3 id="non-residential-or-residential-places" class="anchored">Non-residential or Residential places</h3>
-</blockquote>
+<p>COVID-19 caused widespread disruption to normal lives and human activities. In <strong>China</strong>, the mobility behaviour response to the COVID-19 pandemic at the <strong>intra-city levels</strong> is largely unknown, mainly due to a lack of individual-level publicly available mobility data.</p>
+<p>Globally, the <em>Google Community Mobility Report</em> provides a percentage change in place visit frequencies in six types of locations to help understand people’s social activities within cities, but this dataset <strong>does not include mainland China</strong>.</p>
+<p>Here, using <strong>210 million geotagged posts</strong> from 10 million users in Weibo social media platform, our team provides fine-grained mobility data describing the daily percentage change in visits to functional amenities in China during 2020 compared to the baseline in 2019.</p>
+<section id="feature" class="level3">
+<h3 class="anchored" data-anchor-id="feature">Feature</h3>
+<hr>
+<ul>
+<li><p>The fine-grained mobility data could supplement the available city-level mobility metrics and fill the gap in <em>Google Community Mobility Report</em> in mainland China.</p></li>
+<li><p>With this prior knowledge, governments can formulate corresponding policies for economic recovery, provide post-epidemic assistance to specific groups in need, and be well-prepared for the next global emergency.</p></li>
+<li><p>Using massive geotagged social media data</p></li>
+</ul>
+<p>Percentage change in number of visits to specific places in China during 2020</p>
+<p>Non-residential or Residential places</p>
 <div class="quarto-figure quarto-figure-center">
 <figure class="figure">
 <p><img src="img/data2.png" class="img-fluid figure-img"></p>
 </figure>
 </div>
-<blockquote class="blockquote">
-<h2 id="six-categories-of-places" class="anchored">Six categories of places</h2>
-</blockquote>
+<!-- > *A: Start of the Chunyun period* <br>
+> *B: Announcement of COVID-19 human-to-human transmission* <br>
+> *C: All provinces in mainland China (except Tibet) launched the highest level of emergency responses* <br>
+> *D: 18 provinces lowered the level of emergency response* <br>
+> *a: New Year's Day* <br>
+> *b: the Spring Festival* <br>
+> *c: Tomb-sweeping Day* <br>
+> *d: May Day* <br>
+> *e: the Dragon Boat Festival* <br>
+> *f: National Holiday & Mid-autumn Festival* <br> -->
+<p>Six categories of places</p>
 <div class="panel-tabset">
 <ul class="nav nav-tabs" role="tablist"><li class="nav-item" role="presentation"><a class="nav-link active" id="tabset-1-1-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-1" role="tab" aria-controls="tabset-1-1" aria-selected="true">Residential</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-2-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-2" role="tab" aria-controls="tabset-1-2" aria-selected="false">Workplaces</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-3-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-3" role="tab" aria-controls="tabset-1-3" aria-selected="false">Retail &amp; recreation</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-4-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-4" role="tab" aria-controls="tabset-1-4" aria-selected="false">Parks</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-5-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-5" role="tab" aria-controls="tabset-1-5" aria-selected="false">Transit stations</a></li><li class="nav-item" role="presentation"><a class="nav-link" id="tabset-1-6-tab" data-bs-toggle="tab" data-bs-target="#tabset-1-6" role="tab" aria-controls="tabset-1-6" aria-selected="false">Grocery &amp; pharmacy</a></li></ul>
 <div class="tab-content">
@@ -195,22 +179,27 @@ ul.task-list li input[type="checkbox"] {
 </div>
 </div>
 </div>
+<p><br> <br></p>
+</section>
+</section>
+<section id="about-data" class="level1">
+<h1>About data</h1>
+<p>Geotagged social media data in China.</p>
+<p><br> <br></p>
+<section id="feature-1" class="level2">
+<h2 class="anchored" data-anchor-id="feature-1">Feature</h2>
+<p><br> <br></p>
 </section>
 </section>
 <section id="download" class="level1">
 <h1>Download</h1>
 <p>Download link: <a href="https://github.com/CASGIS/Socialmedia_Mobility/tree/main/publication/aggregated_geotagged_data" class="uri">https://github.com/CASGIS/Socialmedia_Mobility/tree/main/publication/aggregated_geotagged_data</a></p>
+<p><br> <br></p>
 </section>
 <section id="how-to-cite" class="level1">
 <h1>How to cite</h1>
 <p>Using XXX Dataset should cite: XXX</p>
-</section>
-<section id="about-data" class="level1">
-<h1>About data</h1>
-<p>Geotagged social media data in China.</p>
-<section id="feature" class="level2">
-<h2 class="anchored" data-anchor-id="feature">Feature</h2>
-</section>
+<p><br> <br></p>
 </section>
 <section id="data-detail" class="level1">
 <h1>Data detail</h1>
@@ -279,6 +268,7 @@ ul.task-list li input[type="checkbox"] {
 </tr>
 </tbody>
 </table>
+<p><br> <br></p>
 </section>
 </section>
 <section id="contact-us" class="level1">
