@@ -2,7 +2,7 @@ project:
   type: website
 
 website:
-  title: "website"
+  title: "Social media Mobility"
   navbar:
     title: "CASGIS"
 

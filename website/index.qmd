@@ -18,64 +18,73 @@ Here, using **210 million geotagged posts** from 10 million users in Weibo socia
 
 #### Features
 
-***
+------------------------------------------------------------------------
 
-- Our data is probably the **first** mobility dataset depicting the diverse mobility response in China during the pandemic from the perspective of amenities.
+-   Our data is probably the **first** mobility dataset depicting the diverse mobility response in China during the pandemic from the perspective of amenities.
 
-- The data shows the changes in visits to six categories of places: *Residential, Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy*.
+-   The data shows the changes in visits to six categories of places: *Residential, Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy*.
 
-- The fine-grained mobility data could supplement the available city-level mobility metrics and **fill the data gap** in *Google Community Mobility Report* in mainland China.
+-   The fine-grained mobility data could supplement the available city-level mobility metrics and **fill the data gap** in *Google Community Mobility Report* in mainland China.
 
-- The data could help **design targeted policies** to promote outdoor activities and stimulate economic recovery.
+-   The data could help **design targeted policies** to promote outdoor activities and stimulate economic recovery.
 
 <br>
 
 #### Changes in visits to six categories of places in China during 2020
 
-***
+------------------------------------------------------------------------
 
 ::: panel-tabset
 ###### Residential
 
-![](img/fig1.png){fig-align="center"}
+![](img/fig_website_1a.svg){fig-align="center" width="1214"}
 
 ###### Workplaces
 
-![](img/fig2.png){fig-align="center"}
+![](img/fig_website_1b.svg){fig-align="center"}
 
 ###### Retail & recreation
 
-![](img/fig3.png){fig-align="center"}
+![](img/fig_website_1c.svg){fig-align="center"}
 
 ###### Parks
 
-![](img/fig4.png){fig-align="center"}
+![](img/fig_website_1d.svg){fig-align="center"}
 
 ###### Transit stations
 
-![](img/fig5.png){fig-align="center"}
+![](img/fig_website_1e.svg){fig-align="center"}
 
 ###### Grocery & pharmacy
 
-![](img/fig6.png){fig-align="center"}
+![](img/fig_website_1f.svg){fig-align="center"}
+:::
+
+::: {style="font-size:12px; font-style:italic; line-height:1.0"}
+A: Start of the Chunyun period <br> B: Announcement of COVID-19 human-to-human transmission <br> C: All provinces in mainland China (except Tibet) launched the highest level of emergency responses <br> D: 18 provinces lowered the level of emergency response <br> a: New Year's Day <br> b: the Spring Festival <br> c: Tomb-sweeping Day <br> d: May Day <br> e: the Dragon Boat Festival <br> f: National Holiday & Mid-autumn Festival
 :::
 
 <br>
 
 #### Changes in visits to residential/non-residential places in China during 2020
 
-***
+------------------------------------------------------------------------
 
-![](img/fig7.png){fig-align="center"}
+To understand how people balanced their outdoor activities and stay-at-home choices, five non-residential categories (*Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy*) are aggregated into one category and then calculated the corresponding percentage change in the number of visits.
 
-<br>
-<br>
+![](img/fig_website_2.svg){fig-align="center"}
+
+::: {style="font-size:12px; font-style:italic; line-height:1.0"}
+A: Start of the Chunyun period <br> B: Announcement of COVID-19 human-to-human transmission <br> C: All provinces in mainland China (except Tibet) launched the highest level of emergency responses <br> D: 18 provinces lowered the level of emergency response <br> a: New Year's Day <br> b: the Spring Festival <br> c: Tomb-sweeping Day <br> d: May Day <br> e: the Dragon Boat Festival <br> f: National Holiday & Mid-autumn Festival
+:::
+
+<br> <br>
 
 # About data
 
 #### Data source
 
-***
+------------------------------------------------------------------------
 
 The fine-grained mobility data is aggregated from **210 million geotagged posts** uploaded by **10 million Weibo users** from 2019 to 2020. Weibo (https://weibo.com), the Chinese version of Twitter, is the most widely used social media platform in China, with 582 million active users in the second quarter of 2022 (41% penetration of the China population). The Weibo social media platform allows users to share their geographical location by posting **POIs**. Specific POIs can be used to determine the **detailed address** and **geographical coordinates** of the sites visited by users.
 
@@ -83,26 +92,26 @@ The fine-grained mobility data is aggregated from **210 million geotagged posts*
 
 #### Data process
 
-***
+------------------------------------------------------------------------
 
-1. Referring to the **taxonomy** of *Google Community Mobility Report* (https://www.google.com/covid19/mobility/), the POIs attached to posts were grouped into six categories (*Residential, Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy*) based on their social attributes.
+1.  Referring to the **taxonomy** of *Google Community Mobility Report* (https://www.google.com/covid19/mobility/), the POIs attached to posts were grouped into six categories (*Residential, Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy*) based on their social attributes.
 
-2. Counting the daily visits to these categories of places for each cities.
+2.  Counting the daily visits to these categories of places for each cities.
 
-3. Smoothing the daily visits by the method of **7-day moving average**.
+3.  Smoothing the daily visits by the method of **7-day moving average**.
 
-4. Calculating the percentage change for each day by comparing it to a pre-pandemic baseline value for that **same day of the week** estimated over **the second half of 2019**.
+4.  Calculating the percentage change for each day by comparing it to a pre-pandemic baseline value for that **same day of the week** estimated over **the second half of 2019**.
 
 <br>
 
 #### Data description
 
-***
+------------------------------------------------------------------------
 
 The mobility data fields are described as follows:<br>
 
 | Column                       | Description                                                                                                                |
-|-----------------|-------------------------------------------------------|
+|----------------------|-------------------------------------------------|
 | ct_adcode                    | city code                                                                                                                  |
 | city_ch                      | city name (Chinese)                                                                                                        |
 | city_en                      | city name (English)                                                                                                        |
@@ -111,43 +120,36 @@ The mobility data fields are described as follows:<br>
 | pr_en                        | province name (English)                                                                                                    |
 | created_at                   | date                                                                                                                       |
 | category                     | six categories of places (*Residential, Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy*) |
-| visits_7MA_percentage_change | percentage change in number of visits compared to baseline days
+| visits_7MA_percentage_change | percentage change in number of visits compared to baseline days                                                            |
 
-<br>
-<br>
+<br> <br>
 
 # Download
+
 <https://github.com/CASGIS/Socialmedia_Mobility/tree/main/publication/aggregated_geotagged_data>
 
-<br>
-<br>
+<br> <br>
 
 # How to cite
 
 Using the fine-grained Weibo mobility data should cite: XXX
 
-<br>
-<br>
+<br> <br>
 
 # More details
+
 Based on the fine-grained mobility data, our team performed the following analysis, which is described in the paper: XXX.
 
-1. To examine the **representativeness** of users in this data, their spatial distribution and demographic structure was compared to the entire population derived from the national census.
+1.  To examine the **representativeness** of users in this data, their spatial distribution and demographic structure was compared to the entire population derived from the national census.
 
-2. To validate the mobility results externally, the geotagged data was performed **post stratified correction** and further comparison with **Baidu Qianxi data**.
+2.  To validate the mobility results externally, the geotagged data was performed **post stratified correction** and further comparison with **Baidu Qianxi data**.
 
-3. The changes in stay-at-home and outings across functional amenities and **socio-demographic groups** in China during the pandemic were quantified.
+3.  The changes in stay-at-home and outings across functional amenities and **socio-demographic groups** in China during the pandemic were quantified.
 
-4. Adaptation to mobility restrictions was analysed in terms of **visiting diversity** and **travel distances**.
+4.  Adaptation to mobility restrictions was analysed in terms of **visiting diversity** and **travel distances**.
 
-<br>
-<br>
+<br> <br>
 
 # Contact us
 
-zhukaixin\@lreis.ac.cn <br>
-wangjh\@lreis.ac.cn <br>
-Team: <https://github.com/CASGIS> <br> 
-<br> 
-Institute of Geographic Sciences and Natural Resources Research,<br>
-University of Chinese Academy of Sciences
+zhukaixin\@lreis.ac.cn <br> wangjh\@lreis.ac.cn <br> Team: <https://github.com/CASGIS> <br> <br> Institute of Geographic Sciences and Natural Resources Research,<br> University of Chinese Academy of Sciences
