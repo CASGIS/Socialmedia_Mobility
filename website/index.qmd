@@ -126,7 +126,7 @@ The mobility data fields are described as follows:<br>
 
 # Download
 
-<https://github.com/CASGIS/Socialmedia_Mobility/tree/main/publication/aggregated_geotagged_data>
+<https://github.com/CASGIS/Socialmedia_Mobility/tree/main/publication/geotagged_data>
 
 <br> <br>
 
