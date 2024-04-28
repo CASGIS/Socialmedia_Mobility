@@ -1,8 +1,9 @@
 # Social media Mobility
-This repository provides the R code that accompanies the article:  
+This repository provides the data and R code that accompanies the article: Zhu, K., Cheng, Z. & Wang, J. Measuring Chinese mobility behaviour during COVID-19 using geotagged social media data. Humanit Soc Sci Commun 11, 540 (2024). https://doi.org/10.1057/s41599-024-03050-0
 
+If you have questions or suggestions, please contact Jianghao Wang at wangjh@lreis.ac.cn
 
-## Requirement
+## Computational requirement
 * R-studio with R >= 4.3.0
 * Packages
   * Data manipulation: tidyverse, data.table, lubridate, scales, zoo, janitor
@@ -11,47 +12,13 @@ This repository provides the R code that accompanies the article:
 
 ## Structure of this repostitory
 The folder `publication` contains the R code to reproducing the main results.  
-
-```bash
-publication
-├── aggregated_geotagged_data
-│   ├── percentage_change_visits_330_cities.csv
-│   ├── percentage_change_visits_subset_Beijing_Shanghai.csv
-│   └── readme.md
-├── color_setting.R
-├── figure1_data_description
-│   ├── figure1_data_description.Rmd
-│   ├── figure1.pdf
-│   └── figure1.png
-├── figure2_mobility_index
-│   ├── figure2_mobility_index.Rmd
-│   └── figure2.pdf
-├── figure3_test_representativeness
-│   ├── figure3.pdf
-│   └── figure3_test_representativeness.Rmd
-├── figure4_data_validation
-│   ├── figure4_data_validation.Rmd
-│   └── figure4.pdf
-├── figure5_subpopulations_heterogeneity
-│   ├── figure5.pdf
-│   └── figure5_subpopulations_heterogeneity.Rmd
-├── figure6_mobility_temporal_change
-│   ├── figure6_mobility_temporal_change.Rmd
-│   └── figure6.pdf
-└── figure7_mobility_distance
-    ├── figure7_mobility_distance.Rmd
-    └── figure7.pdf
-```
-
-## Data availability
-
-Due to privacy concerns, we only provide the aggregated mobility data: the percentage change in number of visits to six categories of places (*Residential, Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy*), which can be avaiable at `publication/aggregated_geotagged_data/`.
+The folder `publication/geotagged_data` contains the data to support the findings of the research.
 
 ## License
 ……
 
 ## Citation
-……
+Zhu, K., Cheng, Z. & Wang, J. Measuring Chinese mobility behaviour during COVID-19 using geotagged social media data. Humanit Soc Sci Commun 11, 540 (2024). https://doi.org/10.1057/s41599-024-03050-0
 
 ## Acknowledgements
 ……
