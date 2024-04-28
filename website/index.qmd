@@ -152,4 +152,4 @@ Based on the fine-grained mobility data, our team performed the following analys
 
 # Contact us
 
-zhukaixin\@lreis.ac.cn <br> wangjh\@lreis.ac.cn <br> Team: <https://github.com/CASGIS> <br> <br> Institute of Geographic Sciences and Natural Resources Research,<br> University of Chinese Academy of Sciences
+wangjh\@lreis.ac.cn <br> zhukaixin\@lreis.ac.cn <br> Team: <https://github.com/CASGIS> <br> <br> Institute of Geographic Sciences and Natural Resources Research,<br> University of Chinese Academy of Sciences

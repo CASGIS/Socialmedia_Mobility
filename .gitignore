@@ -2,6 +2,7 @@
 .Rhistory
 .RData
 .Ruserdata
+.vscode
 script/
 data/
 result/
