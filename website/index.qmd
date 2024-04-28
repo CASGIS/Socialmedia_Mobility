@@ -132,13 +132,13 @@ The mobility data fields are described as follows:<br>
 
 # How to cite
 
-Using the fine-grained Weibo mobility data should cite: XXX
+Using the data should cite: Zhu, K., Cheng, Z. & Wang, J. Measuring Chinese mobility behaviour during COVID-19 using geotagged social media data. Humanit Soc Sci Commun 11, 540 (2024). https://doi.org/10.1057/s41599-024-03050-0
 
 <br> <br>
 
 # More details
 
-Based on the fine-grained mobility data, our team performed the following analysis, which is described in the paper: XXX.
+Based on the fine-grained mobility data, our team performed the following analysis, which is described in the paper: Zhu, Cheng & Wang (2024).
 
 1.  To examine the **representativeness** of users in this data, their spatial distribution and demographic structure was compared to the entire population derived from the national census.
 
