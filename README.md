@@ -7,7 +7,7 @@ If you have questions or suggestions, please contact Jianghao Wang at wangjh@lre
 
 ## Structure of this repostitory
 The folder `publication` contains the R code to reproducing the main results.  
-The folder `publication/geotagged_data` contains the geotagged social data to support the findings of the research.
+The folder `publication/geotagged_data` contains the geotagged social data to support the findings of the research.  
 More details about the geotagged social media are available at https://casgis.github.io/Socialmedia_Mobility/
 
 ## Computational requirement
