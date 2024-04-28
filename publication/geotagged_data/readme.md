@@ -1,27 +1,9 @@
-# Percentage change in number of visits to six categories of palces across cities
+# Data description
+More details about the geotagged social media are available at https://casgis.github.io/Socialmedia_Mobility/
 
-## Data source
-We collected 210 million geotagged posts uploaded by 10 million users from Weibo from 2019 to 2020. Weibo, the Chinese version of Twitter, is the most widely used social media platform in China (https://weibo.com).
+# Citation
+These aggregated geotagged social media data support the findings of the article: Zhu, Cheng & Wang (2024). Please do cite this paper if using the data or codes.
 
-## Data process
-1. Referring to the classification criterion of categories in Google Community Mobility Report (https://www.google.com/covid19/mobility/), we classified POIs attached to geotagged posts into six categories of places by their social function.
-2. Counting the daily visits to these categories of places for each cities.
-3. Smoothing the daily visits by the method of 7-day moving average.
-4. Calculating the percentage change by comparing visits to baseline days. The baseline days represent a normal value for that day of the week and are given as the median value over the period of the second half of 2019. 
+Zhu, K., Cheng, Z. & Wang, J. Measuring Chinese mobility behaviour during COVID-19 using geotagged social media data. Humanit Soc Sci Commun 11, 540 (2024). https://doi.org/10.1057/s41599-024-03050-0
 
-## Data description
-| Column | Description |
-| ----------- | ----------- |
-| ct_adcode | city code |
-| city_ch | city name (Chinese) |
-| city_en | city name (English) |
-| pr_adcode | province code |
-| pr_ch | province name (Chinese) |
-| pr_en | province name (English) |
-| created_at | date |
-| category | six categories of places (*Residential, Workplaces, Retail & recreation, Parks, Transit stations, and Grocery & pharmacy*) |
-| visits_7MA_percentage_change | percentage change in number of visits compared to baseline days |
-
-## License
-
-
+If you have questions or suggestions, please contact Jianghao Wang at wangjh@lreis.ac.cn
